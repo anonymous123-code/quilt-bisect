@@ -1,0 +1,47 @@
+{
+	"schema_version": 1,
+	"quilt_loader": {
+		"group": "io.github.anonymous123_code.quilt_bisect",
+		"id": "quilt_bisect",
+		"version": "${version}",
+		"metadata": {
+			"name": "Quilt Bisect",
+			"description": "A mod helping in blaming mods for issues (Better desc tbd)",
+			"contributors": {
+				"anonymous123-code": "Owner"
+			},
+			"contact": {
+				"homepage": "https://anonymous123-code.github.io/",
+				"issues": "https://github.com/anonymous123-code/quilt-bisect/issues",
+				"sources": "https://github.com/anonymous123-code/quilt-bisect"
+			},
+			"icon": "assets/quilt_bisect/icon.png"
+		},
+		"intermediate_mappings": "net.fabricmc:intermediary",
+		"entrypoints": {
+			"init": "io.github.anonymous123_code.quilt_bisect.QuiltBisect",
+			"pre_launch": "io.github.anonymous123_code.quilt_bisect.QuiltBisect"
+		},
+		"depends": [
+			{
+				"id": "quilt_loader",
+				"versions": ">=0.19.1"
+			},
+			{
+				"id": "quilted_fabric_api",
+				"versions": ">=7.0.2"
+			},
+			{
+				"id": "minecraft",
+				"versions": ">=1.20"
+			}
+		]
+	},
+	"experimental_quilt_loader_plugin": {
+		"class": "io.github.anonymous123_code.quilt_bisect.plugin.BisectPlugin",
+		"packages":[
+			"io.github.anonymous123_code.quilt_bisect.plugin"
+		]
+	},
+	"mixin": "quilt_bisect.mixins.json"
+}
