@@ -1,16 +1,15 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
+import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+
 import javax.swing.*;
 import java.awt.*;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.util.regex.Pattern;
 
 import static javax.swing.JOptionPane.CLOSED_OPTION;
 import static javax.swing.JOptionPane.getRootFrame;
 
-public class BisectUi {
+public class BisectPluginUi {
 	static {
 		// Set MacOS specific system props
 		System.setProperty("apple.awt.application.appearance", "system");
@@ -24,9 +23,8 @@ public class BisectUi {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 
-	public static boolean openDialog(int exitCode, File crashLog) throws Exception {
-		String crashlog = new BufferedReader(new FileReader(crashLog)).lines().collect(StringBuilder::new, (stringBuilder, string) -> stringBuilder.append("\n").append(string), StringBuilder::append).toString();
-
+	public static boolean openDialog(int exitCode, File crashLogFile) throws Exception {
+		String crashLog = BisectUtils.readFile(crashLogFile);
 		init();
 
 		var dialogInfo = new JPanel();
@@ -39,8 +37,8 @@ public class BisectUi {
 		dialogInfo.add(label, BorderLayout.NORTH);
 
 		var tabs = new JTabbedPane();
-		tabs.add("Stacktrace", createStacktracePanel(crashlog));
-		tabs.add("Full crash log", createTextArea(crashlog));
+		tabs.add("Stacktrace", createStacktracePanel(crashLog));
+		tabs.add("Full crash log", createTextArea(crashLog));
 		dialogInfo.add(tabs, BorderLayout.CENTER);
 
 		int result = showOptionDialog(dialogInfo, "Minecraft crashed. Start Bisect?", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -53,7 +51,7 @@ public class BisectUi {
 		JLabel label = new JLabel("The stacktrace will be used to discern different errors");
 		label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		panel.add(label, BorderLayout.NORTH);
-		panel.add(createTextArea(extractStackTrace(crashlog)), BorderLayout.CENTER);
+		panel.add(createTextArea(BisectUtils.extractStackTrace(crashlog)), BorderLayout.CENTER);
 		return panel;
 	}
 
@@ -62,17 +60,6 @@ public class BisectUi {
 		textarea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, textarea.getFont().getSize()));
 		textarea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		return new JScrollPane(textarea);
-	}
-
-	private static String extractStackTrace(String crashlog) {
-		System.out.println(crashlog);
-		Pattern r = Pattern.compile("Description:.*\n\n((?:.+\n)*)\n\nA detailed walkthrough of the error, its code path and all known details is as follows");
-		var matcher = r.matcher(crashlog);
-		if (matcher.find()) {
-			return matcher.group(1);
-		} else {
-			throw new RuntimeException("Failed to extract stacktrace from crash log");
-		}
 	}
 
 	public static int showOptionDialog(Object message, String title, int optionType, int messageType)
@@ -87,6 +74,7 @@ public class BisectUi {
 
 		dialog.setResizable(true);
 		pane.selectInitialValue();
+		//noinspection deprecation
 		dialog.show();
 		dialog.dispose();
 

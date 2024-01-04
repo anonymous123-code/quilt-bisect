@@ -14,7 +14,7 @@ import java.util.Optional;
 public class BisectPlugin implements QuiltLoaderPlugin {
 	private static final PluginLogHandler LOGGER = PluginLogHandler.INSTANCE;
 	private final LogFileManager logFileManager = new LogFileManager(Path.of("crash-reports"));
-	private final BisectProcessManager processManager = new BisectProcessManager();
+	private final BisectPluginProcessManager processManager = new BisectPluginProcessManager();
 
 	private void runParent() {
 		LOGGER.info("preparing to invoke great evils");
@@ -37,7 +37,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 					System.exit(exitCode.get());
 				} else {
 					try {
-						if (BisectUi.openDialog(exitCode.get(), crashLog.get())) {
+						if (BisectPluginUi.openDialog(exitCode.get(), crashLog.get())) {
 
 						} else {
 							System.exit(exitCode.get());

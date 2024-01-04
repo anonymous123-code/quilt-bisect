@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class BisectProcessManager {
+public class BisectPluginProcessManager {
 
 	private static final PluginLogHandler LOGGER = PluginLogHandler.INSTANCE;
 	private static volatile Process process = null;
@@ -68,7 +68,7 @@ public class BisectProcessManager {
 		if (shutdownHook == null) {
 			// Note: this isn't run when the JVM forcibly terminates (i.e. from a "kill" button in a launcher)
 			//       The parent exit watchdog is a workaround for this issue (though it only works if the child process isn't hung)
-			shutdownHook = new Thread(BisectProcessManager::cleanupProcess);
+			shutdownHook = new Thread(BisectPluginProcessManager::cleanupProcess);
 			Runtime.getRuntime().addShutdownHook(shutdownHook);
 		}
 	}
