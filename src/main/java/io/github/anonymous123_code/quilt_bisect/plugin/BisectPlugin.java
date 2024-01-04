@@ -1,12 +1,17 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import org.quiltmc.loader.api.LoaderValue;
 import org.quiltmc.loader.api.QuiltLoader;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
 import org.quiltmc.loader.api.plugin.QuiltPluginContext;
 
+import javax.swing.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,7 +23,6 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	private void runParent() {
 		LOGGER.info("preparing to invoke great evils");
-		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
 		logFileManager.scan();
 		Optional<Integer> exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
 		while (exitCode.isPresent()) {
@@ -29,23 +33,29 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			ActiveBisectConfig.update();
 			ActiveBisectConfig config = ActiveBisectConfig.getInstance();
 
+			var crashLogFile = logFileManager.getNew();
 			if (config.bisectActive) {
-				throw new RuntimeException("TODO");
-			} else {
-				var crashLog = logFileManager.getNew();
-				if (crashLog.isEmpty()) {
+				try {
+					BisectUtils.parentBisect(crashLogFile.isEmpty() ? Optional.empty() : Optional.of(BisectUtils.readFile(crashLogFile.get())), crashLogFile.map(File::getName));
+				} catch (IOException | NoSuchAlgorithmException e) {
+					throw new RuntimeException(e);
+				}
+            } else {
+				if (crashLogFile.isEmpty()) {
 					System.exit(exitCode.get());
 				} else {
 					try {
-						if (BisectPluginUi.openDialog(exitCode.get(), crashLog.get())) {
-
+						var crashLog = BisectUtils.readFile(crashLogFile.get());
+						if (BisectPluginUi.openDialog(exitCode.get(), crashLog)) {
+							BisectUtils.parentBisect(Optional.of(crashLog), Optional.of(crashLogFile.get().getName()));
 						} else {
 							System.exit(exitCode.get());
 						}
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				}
+					} catch (UnsupportedLookAndFeelException | IOException | ClassNotFoundException |
+                             InstantiationException | IllegalAccessException | NoSuchAlgorithmException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 			}
 			exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
 		}

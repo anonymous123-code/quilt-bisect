@@ -4,7 +4,6 @@ import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 
 import static javax.swing.JOptionPane.CLOSED_OPTION;
 import static javax.swing.JOptionPane.getRootFrame;
@@ -16,15 +15,14 @@ public class BisectPluginUi {
 		System.setProperty("apple.awt.application.name", "Quilt Loader");
 	}
 
-	static void init() throws Exception {
+	static void init() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		if (GraphicsEnvironment.isHeadless()) {
 			throw new HeadlessException();
 		}
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 
-	public static boolean openDialog(int exitCode, File crashLogFile) throws Exception {
-		String crashLog = BisectUtils.readFile(crashLogFile);
+	public static boolean openDialog(int exitCode, String crashLog) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		init();
 
 		var dialogInfo = new JPanel();
