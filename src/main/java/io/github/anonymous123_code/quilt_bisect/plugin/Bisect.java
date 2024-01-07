@@ -60,7 +60,7 @@ public class Bisect {
 		var activeBisect = ActiveBisectConfig.getInstance();
 		HashMap<String, Path> loadOptions = getModOptions();
 		activeBisect.updateFiles(loadOptions);
-		loadModSet(context, calculateModSet(activeBisect, context), loadOptions);
+		loadModSet(context, calculateModSet(activeBisect), loadOptions);
 	}
 
 	public static HashMap<String, Path> getModOptions() throws IOException, ParseMetadataException {
@@ -75,6 +75,7 @@ public class Bisect {
 		}
 	}
 
+	@SuppressWarnings("RedundantThrows") // Thrown in method invoked via reflection
 	private static String extractModId(Path it) throws IOException, ParseMetadataException {
 		try (var zip = new ZipInputStream(Files.newInputStream(it))) {
 			for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
@@ -92,7 +93,7 @@ public class Bisect {
 		}
 	}
 
-	private static List<ModSet.ModSetSection> calculateModSet(ActiveBisectConfig activeBisect, QuiltPluginContext context) {
+	private static List<ModSet.ModSetSection> calculateModSet(ActiveBisectConfig activeBisect) {
 		Optional<ModSet> firstInvalidated = activeBisect.getFirstInvalidatedModSet();
 		if (firstInvalidated.isPresent()) {
 			return List.of(firstInvalidated.get().getFullSection());
@@ -100,6 +101,8 @@ public class Bisect {
 			// find the smallest mod set where an unsolved issue is present -> this is the mod set we're trying to debug
 			ModSet.ModSetSection smallestIssueModSetSection = activeBisect.findSmallestUnfixedModSet().getFullSection();
 			return bisect(smallestIssueModSetSection, activeBisect);
+			// TODO: detect when a minimal reproduction is reached (a set with all sections in length 1 errors)
+			// TODO: and mark the issue as fixed. Procceed testing larger (known issue) mod sets with that fix applied if it fixes it.
 		}
 	}
 
