@@ -1,7 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 /*
- * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the ropository root.
+ * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the repository root.
  * Modifications:
  * - Extracted from plugin into extra class
  * - Fix compat with dev env
@@ -83,6 +83,10 @@ public class BisectPluginProcessManager {
 		String javaExec = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
 		args.add(javaExec);
 		args.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
+
+		// Don't crash the child process by adding wrong debugging args
+		args.removeIf(it -> (it.contains("agentlib") && it.contains("address")) || (it.startsWith("-javaagent") && it.contains("debugger-agent.jar")));
+
 		args.add("-DquiltBisect.forked=true");
 		if (System.getProperty("quiltBisect.forkarg") != null) {
 			args.add(System.getProperty("quiltBisect.forkarg"));

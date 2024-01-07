@@ -1,17 +1,16 @@
 package io.github.anonymous123_code.quilt_bisect.shared;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
 import org.quiltmc.loader.api.QuiltLoader;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class ActiveBisectConfig {
 	public static final Path configDirectory = QuiltLoader.getConfigDir().resolve("bisect");
@@ -51,17 +50,12 @@ public class ActiveBisectConfig {
 		return INSTANCE == this;
 	}
 
-	public boolean safe(boolean force)  {
-		if (!force && !isUpToDate()) return false;
+	public void safe(boolean force) throws IOException {
+		if (!force && !isUpToDate()) return;
 		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
 		var config_file = config_dir.resolve("active_bisect.json");
 		var gson = new GsonBuilder().setPrettyPrinting().create();
-		try (var file = new FileOutputStream(config_file.toFile())) {
-			file.write(gson.toJson(this).getBytes(StandardCharsets.UTF_8));
-		} catch (IOException e) {
-			return false;
-		}
-		return true;
+		Files.writeString(config_file, gson.toJson(this));
 	}
 
 	private static ActiveBisectConfig serializeFromFile(Path configFile) {
@@ -69,9 +63,9 @@ public class ActiveBisectConfig {
 			.setPrettyPrinting()
 			.registerTypeAdapter(ModSet.class, (JsonDeserializer<ModSet>) (jsonElement, type, jsonDeserializationContext) -> {
 				if (jsonElement.getAsJsonObject().get("working").getAsBoolean()) {
-					return new Gson().fromJson(jsonElement, WorkingModSet.class);
+					return new Gson().fromJson(jsonElement, ModSet.WorkingModSet.class);
 				} else {
-					return new Gson().fromJson(jsonElement, ErroringModSet.class);
+					return new Gson().fromJson(jsonElement, ModSet.ErroringModSet.class);
 				}
 			})
 			.registerTypeAdapter(Issue.class, (JsonDeserializer<Issue>) (jsonElement, type, jsonDeserializationContext) -> {
@@ -86,18 +80,16 @@ public class ActiveBisectConfig {
 					case "user" -> {
 						return new Gson().fromJson(jsonElement, UserIssue.class);
 					}
-					default -> {
-						throw new JsonParseException("Invalid Type");
-					}
+					default -> throw new JsonParseException("Invalid Type");
 				}
 			})
 			.create();
 		try {
-			return gson.fromJson(new FileReader(configFile.toFile()), ActiveBisectConfig.class);
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-	}
+			return gson.fromJson(Files.readString(configFile), ActiveBisectConfig.class);
+		} catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
 	public boolean bisectActive = false;
@@ -106,24 +98,24 @@ public class ActiveBisectConfig {
 	public HashMap<String, String> modIdToFile = new HashMap<>();
 
 
-	public void processRun(HashMap<String, String> modSetToPath, String modSetHash, Optional<String> crashLog, Optional<String> crashLogPath) {
-		updateFiles(modSetToPath);
+	public void processRun(List<String> modIdSet, String modSetHash, Optional<String> crashLog, Optional<String> crashLogPath) {
 		Optional<Integer> issue = getOrAddIssue(crashLog);
-		ModSet modSet = issue.isPresent() ? new ErroringModSet(modSetToPath.keySet(), issue.get(), crashLogPath.orElse("")) : new WorkingModSet(modSetToPath.keySet());
+		ModSet modSet = issue.isPresent() ? new ModSet.ErroringModSet(new ArrayList<>(modIdSet), issue.get(), crashLogPath.orElse("")) : new ModSet.WorkingModSet(new ArrayList<>(modIdSet));
 		modSets.put(modSetHash, modSet);
 	}
 
-	private void updateFiles(HashMap<String, String> modSetToPath) {
+	public void updateFiles(HashMap<String, Path> modSetToPath) {
 		for (var entry : modSetToPath.entrySet()) {
+			var fileName = entry.getValue().getFileName().toString();
 			if (modIdToFile.containsKey(entry.getKey())) {
-				if (!modIdToFile.get(entry.getKey()).equals(entry.getValue())) {
+				if (!modIdToFile.get(entry.getKey()).equals(fileName)) {
 					for (var modSet: modSets.values()) {
 						if (modSet.modSet.contains(entry.getKey())) modSet.invalidated = true;
 					}
-					modIdToFile.put(entry.getKey(), entry.getValue());
+					modIdToFile.put(entry.getKey(), fileName);
 				}
 			} else {
-				modIdToFile.put(entry.getKey(), entry.getValue());
+				modIdToFile.put(entry.getKey(), fileName);
 			}
 		}
 	}
@@ -133,54 +125,62 @@ public class ActiveBisectConfig {
 		if (Files.exists(issuePath)) {
 			String issueData;
 			try {
-				issueData = BisectUtils.readFile(issuePath.toFile());
+				issueData = Files.readString(issuePath);
 				Files.delete(issuePath);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 			return Optional.of(Integer.parseInt(issueData, 10));
 		} else if (crashLog.isPresent()){
-			issues.add(new CrashIssue(BisectUtils.extractStackTrace(crashLog.get())));
+			var stacktrace = removeLikelyMixinPoison(BisectUtils.extractStackTrace(crashLog.get()));
+			for (int issueIndex = 0; issueIndex < issues.size(); issueIndex++) {
+				var issue = issues.get(issueIndex);
+				if (issue instanceof CrashIssue && removeLikelyMixinPoison(((CrashIssue) issue).stacktrace).equals(stacktrace)) {
+					return Optional.of(issueIndex);
+				}
+			}
+			issues.add(new CrashIssue(stacktrace));
 			return Optional.of(issues.size() - 1);
 		} else return Optional.empty();
 	}
 
-	public static abstract class ModSet {
-		protected ModSet(boolean working, Set<String> modSet) {
-			this.working = working;
-			this.invalidated = false;
-			this.modSet = modSet;
-		}
-
-		public boolean isWorking() {
-			return working;
-		}
-
-		public final boolean working;
-		public boolean invalidated;
-		public final Set<String> modSet;
+	public String removeLikelyMixinPoison(String oldStacktrace) {
+		return oldStacktrace.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler$");
 	}
 
-	public static class WorkingModSet extends ModSet {
-		public WorkingModSet(Set<String> modSet) {
-			super(true, modSet);
+	public Optional<ModSet> getFirstInvalidatedModSet() {
+		for (ModSet modSet : modSets.values()) {
+			if (modSet.invalidated) return Optional.of(modSet);
 		}
+		return Optional.empty();
 	}
 
-	public static class ErroringModSet extends ModSet {
-		public final int issueId;
-		public final String crashLogPath;
-
-		public ErroringModSet(Set<String> modSet, int issueId, String crashLogPath) {
-			super(false, modSet);
-			this.issueId = issueId;
-			this.crashLogPath = crashLogPath;
+	public Optional<ModSet> getModSet(ModSet.ModSetSection first, ModSet.ModSetSection... modSetSections) {
+        ArrayList<String> mods = new ArrayList<>(first.getArrayListCopy());
+		for (ModSet.ModSetSection modSetSection : modSetSections) {
+			mods.addAll(modSetSection.getArrayListCopy());
 		}
+		Collections.sort(mods);
+		return modSets.values().stream().filter(it -> mods.equals(it.modSet)).findAny();
+	}
+
+	public ModSet findSmallestUnfixedModSet() {
+		ModSet smallest = null;
+		int smallestSize = Integer.MAX_VALUE;
+		for (var set : modSets.values()) {
+			if (set.working) continue;
+			if (set.modSet.size() < smallestSize) {
+				smallest = set;
+				smallestSize = set.modSet.size();
+			}
+		}
+		return smallest;
 	}
 
 	public static abstract class Issue {
 		public String world;
 		public String server;
+		public boolean fixed;
 		public IssueType type;
 
 		private Issue(IssueType type, String server, String world) {
@@ -197,7 +197,7 @@ public class ActiveBisectConfig {
 		@SerializedName("log")
 		LOG(),
 		@SerializedName("user")
-		USER();
+		USER()
 	}
 
 	public static class CrashIssue extends Issue {
@@ -225,7 +225,7 @@ public class ActiveBisectConfig {
 
 	public static class LogIssue extends Issue {
 		public String name;
-		public boolean regex = false;
+		public boolean regex;
 		public String logger;
 		public String message;
 		public String level;

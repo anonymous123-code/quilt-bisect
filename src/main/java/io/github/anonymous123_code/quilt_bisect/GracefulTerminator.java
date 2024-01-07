@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect;
 /*
- * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the ropository root.
+ * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the repository root.
  * Modifications:
  * - Adjusted package
  * - Log shutdown
@@ -26,7 +26,7 @@ public class GracefulTerminator {
 		// Need to start a new thread, because mojang's shutdown hook blocks waiting for the server thread to clean up
 		// also because we can't block the server thread waiting for the server thread to exit :P
 		new Thread(() -> {
-			// Try to shutdown all servers before terminating
+			// Try to shut down all servers before terminating
 			Semaphore terminationSem = new Semaphore(0);
 			int numServersStopping = 0;
 			for (WeakReference<MinecraftServer> ref : servers) {

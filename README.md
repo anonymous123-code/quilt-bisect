@@ -15,4 +15,4 @@ For testing, I also recommend [Quilt Crasher](https://github.com/anonymous123-co
 
 `PluginLogger` and `GracefulTerminator` were mostly taken from https://github.com/comp500/ModVote.
 `BisectPlugin` also contains large parts of `ModvotePlugin` from that repo.
-All of these are under the under the [MIT license](Modvote-License) (by comp500)
+All of these are under the [MIT license](Modvote-License) (by comp500)

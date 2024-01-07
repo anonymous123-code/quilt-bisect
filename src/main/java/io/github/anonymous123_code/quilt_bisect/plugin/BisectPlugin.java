@@ -1,17 +1,19 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import org.quiltmc.loader.api.LoaderValue;
 import org.quiltmc.loader.api.QuiltLoader;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
 import org.quiltmc.loader.api.plugin.QuiltPluginContext;
+import org.quiltmc.loader.impl.fabric.metadata.ParseMetadataException;
 
 import javax.swing.*;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,7 +23,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	private final LogFileManager logFileManager = new LogFileManager(Path.of("crash-reports"));
 	private final BisectPluginProcessManager processManager = new BisectPluginProcessManager();
 
-	private void runParent() {
+	private void runParent() throws IOException {
 		LOGGER.info("preparing to invoke great evils");
 		logFileManager.scan();
 		Optional<Integer> exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
@@ -36,7 +38,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			var crashLogFile = logFileManager.getNew();
 			if (config.bisectActive) {
 				try {
-					BisectUtils.parentBisect(crashLogFile.isEmpty() ? Optional.empty() : Optional.of(BisectUtils.readFile(crashLogFile.get())), crashLogFile.map(File::getName));
+					Bisect.parentBisect(crashLogFile.isEmpty() ? Optional.empty() : Optional.of(Files.readString(crashLogFile.get())), crashLogFile.map(file -> file.getFileName().toString()));
 				} catch (IOException | NoSuchAlgorithmException e) {
 					throw new RuntimeException(e);
 				}
@@ -45,9 +47,9 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 					System.exit(exitCode.get());
 				} else {
 					try {
-						var crashLog = BisectUtils.readFile(crashLogFile.get());
+						var crashLog = Files.readString(crashLogFile.get());
 						if (BisectPluginUi.openDialog(exitCode.get(), crashLog)) {
-							BisectUtils.parentBisect(Optional.of(crashLog), Optional.of(crashLogFile.get().getName()));
+							Bisect.parentBisect(Optional.of(crashLog), Optional.of(crashLogFile.get().getFileName().toString()));
 						} else {
 							System.exit(exitCode.get());
 						}
@@ -65,21 +67,35 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	@Override
 	public void load(QuiltPluginContext context, Map<String, LoaderValue> previousData) {
 		if (!"true".equals(System.getProperty("quiltBisect.forked"))) {
-			runParent();
-			return;
+            try {
+                runParent();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return;
 		}
-		runChild(context);
-	}
+        try {
+            runChild(context);
+        } catch (IOException | ParseMetadataException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	private void runChild(QuiltPluginContext context) {
+	private void runChild(QuiltPluginContext context) throws IOException, ParseMetadataException {
 		Optional<ProcessHandle> parentProcess = ProcessHandle.current().parent();
 		if (parentProcess.isEmpty()) {
 			LOGGER.warn("Failed to get parent process: will keep running if a launcher terminates the game!");
 		} else {
 			processManager.parentExitWatchdog(parentProcess.get());
 		}
-
-		LOGGER.info("hehe :3");
+		ActiveBisectConfig.update();
+		var activeConfig = ActiveBisectConfig.getInstance();
+		if (activeConfig.bisectActive) {
+			Bisect.childBisect(context);
+		} else {
+			var  options = Bisect.getModOptions();
+			Bisect.loadModSet(context, new ArrayList<>(options.keySet()), List.of(0), options);
+		}
 		System.setProperty("quiltBisect.active", "true");
 	}
 
