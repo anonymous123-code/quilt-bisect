@@ -127,10 +127,10 @@ public class ActiveBisectConfig {
 			}
 			return Optional.of(Integer.parseInt(issueData, 10));
 		} else if (crashLog.isPresent()){
-			var stacktrace = removeLikelyMixinPoison(BisectUtils.extractStackTrace(crashLog.get()));
+			var stacktrace = removeStacktracePoison(BisectUtils.extractStackTrace(crashLog.get()));
 			for (int issueIndex = 0; issueIndex < issues.size(); issueIndex++) {
 				var issue = issues.get(issueIndex);
-				if (issue instanceof Issue.CrashIssue && removeLikelyMixinPoison(((Issue.CrashIssue) issue).stacktrace).equals(stacktrace)) {
+				if (issue instanceof Issue.CrashIssue && removeStacktracePoison(((Issue.CrashIssue) issue).stacktrace).equals(stacktrace)) {
 					return Optional.of(issueIndex);
 				}
 			}
@@ -139,8 +139,10 @@ public class ActiveBisectConfig {
 		} else return Optional.empty();
 	}
 
-	public String removeLikelyMixinPoison(String oldStacktrace) {
-		return oldStacktrace.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$");
+	public String removeStacktracePoison(String oldStacktrace) {
+		return oldStacktrace
+			.replaceAll(":\\d+\\)", ")") // Line numbers
+			.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
 	}
 
 	public Optional<ModSet> getFirstInvalidatedModSet() {

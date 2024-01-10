@@ -1,6 +1,6 @@
 # Quilt Bisect
 
-A mod helping in finding mods responsible for issues using an extended binary search.
+A mod helping in finding mods responsible for issues using an extended binary search algorithm.
 
 ## Usage
 
