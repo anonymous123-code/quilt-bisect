@@ -1,5 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect;
 
+import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
@@ -18,11 +19,25 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint {
 
 	@Override
 	public void onInitialize(ModContainer mod) {
-		ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
-            if (screen instanceof TitleScreen) {
-                screen.getButtons().add(ButtonWidget.builder(Text.of("Hi"), buttonWidget -> GracefulTerminator.gracefullyTerminate(57)).build());
-            }
-        });
+		var bisectConfig = ActiveBisectConfig.getInstance();
+		if (bisectConfig.bisectActive) {
+			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
+				if (screen instanceof TitleScreen) {
+					screen.getButtons().add(ButtonWidget.builder(Text.of("No Issue"), buttonWidget -> {
+						GracefulTerminator.gracefullyTerminate(56);
+					}).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH, 0).build());
+					screen.getButtons().add(ButtonWidget.builder(Text.of("Manual Issue"), buttonWidget -> {
+						throw new RuntimeException("TODO");
+					}).position(screen.width / 2, 0).build());
+				}
+			});
+		} else {
+			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
+				screen.getButtons().add(ButtonWidget.builder(Text.of("Start Bisect"), (w) -> {
+					throw new RuntimeException("TODO");
+				}).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build());
+			});
+		}
 	}
 
 	@Override

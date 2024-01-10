@@ -120,7 +120,7 @@ public class Bisect {
 			var done = true;
 			for (ModSet.Section s : (Iterable<ModSet.Section>) smallestIssueModSet::iterator) {
 				done = done && s.size() == 1;
-				result.addAll(bisect(s, activeBisect));
+				result.addAll(bisect(s, activeBisect, result.toArray(new ModSet.Section[]{})));
 			}
 			if (!done) {
 				return result;
@@ -137,9 +137,9 @@ public class Bisect {
 		}
 	}
 
-	private static List<ModSet.Section> bisect(ModSet.Section parent, ActiveBisectConfig activeBisect, ModSet.Section... givenModSetSections) {
+	private static ArrayList<ModSet.Section> bisect(ModSet.Section parent, ActiveBisectConfig activeBisect, ModSet.Section... givenModSetSections) {
 		// If the size is 1, we found one culprit, and can return early
-		if (parent.size() == 1) return List.of(parent);
+		if (parent.size() == 1) return new ArrayList<>(List.of(parent));
 		// Divide the mod set into halves
 		for (ModSet.Section[] half : parent.getPossibleArrayHalveCombinations()) {
 			Optional<ModSet> half0ModSet = activeBisect.getModSet(half[0], givenModSetSections);
@@ -157,14 +157,14 @@ public class Bisect {
 				return result;
 			} else if (modSetExistsAndIsWorkingOrFixed(half0ModSet, activeBisect)) {
 				// If the first half already has been tested, test the other half
-				return List.of(half[1]);
+				return new ArrayList<>(Arrays.asList(half[1]));
 			} else if (modSetExistsAndIsWorkingOrFixed(half1ModSet, activeBisect)) {
 				// If the second half already has been tested, test the other half
-				return List.of(half[0]);
+				return new ArrayList<>(Arrays.asList(half[0]));
 			}
 		}
 		// If no halves have been tested, test the first one
-		return List.of(parent.getPossibleArrayHalveCombinations()[0][0]);
+		return new ArrayList<>(Arrays.asList(parent.getPossibleArrayHalveCombinations()[0][0]));
 	}
 
 	private static boolean modSetExistsAndIsWorkingOrFixed(Optional<ModSet> modSet, ActiveBisectConfig activeBisect) {
@@ -179,6 +179,7 @@ public class Bisect {
 			sectionIndices.add(flatMapModIds.size() + modSection.size());
 			flatMapModIds.addAll(modSection.getListCopy());
 		}
+		sectionIndices.remove(sectionIndices.size()-1);
 
 		loadModSet(context, flatMapModIds, sectionIndices, loadOptions);
 	}
