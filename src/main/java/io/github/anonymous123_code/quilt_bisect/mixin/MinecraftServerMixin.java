@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 /*
- * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the ropository root.
+ * Licensed under the MIT license by comp500 (2023). See the ModVote-License file in the repository root.
  * Modifications:
  * - Adjusted package
  */
