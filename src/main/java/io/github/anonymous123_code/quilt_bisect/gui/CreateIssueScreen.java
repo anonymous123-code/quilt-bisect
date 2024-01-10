@@ -17,14 +17,16 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 
-public class StartBisectScreen extends SpruceScreen {
+public class CreateIssueScreen extends SpruceScreen {
 	private final Screen parent;
 	private SpruceTextFieldWidget widget;
+	private final boolean start;
 
-	public StartBisectScreen(@Nullable Screen parent) {
-		super(Text.translatable("gui.bisect.start.screen"));
+	public CreateIssueScreen(@Nullable Screen parent, boolean start) {
+		super(Text.translatable(start ? "gui.bisect.start.screen" : "gui.bisect.new_issue.screen"));
 		this.parent = parent;
-	}
+        this.start = start;
+    }
 
 	@Override
 	protected void init() {
@@ -33,7 +35,7 @@ public class StartBisectScreen extends SpruceScreen {
 		widget = new SpruceTextFieldWidget(Position.of(this.width/2 + 5, this.height/2-10), 150, 20, Text.translatable("gui.bisect.issue_name"));
 		this.addDrawableChild(widget);
 		this.addDrawableChild(
-			new SpruceButtonWidget(Position.of(this.width / 2 + 5, this.height - 38), ButtonWidget.DEFAULT_WIDTH, 20, Text.translatable("gui.bisect.start"), button -> this.onDone())
+			new SpruceButtonWidget(Position.of(this.width / 2 + 5, this.height - 38), ButtonWidget.DEFAULT_WIDTH, 20, Text.translatable(this.start ? "gui.bisect.start" : "gui.bisect.continue"), button -> this.onDone())
 		);
 		this.addDrawableChild(
 			new SpruceButtonWidget(Position.of(this.width / 2 - ButtonWidget.DEFAULT_WIDTH - 5, this.height - 38), ButtonWidget.DEFAULT_WIDTH, 20, CommonTexts.CANCEL, button -> this.onCancel())

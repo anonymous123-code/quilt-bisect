@@ -39,7 +39,7 @@ public abstract class Issue {
 		}
 	}
 
-	public static class LogIssue extends Issue {
+	public static class LogIssue extends Issue implements NamedIssue {
 		public String name;
 		public boolean regex;
 		public String logger;
@@ -54,14 +54,28 @@ public abstract class Issue {
 			this.level = level;
 			this.regex = regex;
 		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
 	}
 
-	public static class UserIssue extends Issue {
+	public static class UserIssue extends Issue implements NamedIssue {
 		public String name;
 		public UserIssue(String name, String server, String world) {
 			super(Type.USER, server, world);
 			this.name = name;
 		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
+	}
+
+	public interface NamedIssue {
+		String getName();
 	}
 
 	public static class Fix {

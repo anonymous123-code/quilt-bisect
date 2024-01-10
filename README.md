@@ -6,10 +6,10 @@ A mod helping in finding mods responsible for issues using an extended binary se
 
 - This project uses Loader Plugins, `-Dloader.experimental.allow_loading_plugins=true` needs to be added to your JVM arguments.
 - Move the mods you want to test into a directory called `modsToBisect` in your minecraft folder
-- If your game crashes, a dialog will open asking if you want to bisect, else (todo) click the start bisect button at the top of your screen, and you will be prompted to give your issue a name
+- If your game crashes, a dialog will open asking if you want to bisect, else click the start bisect button at the top of your screen, and you will be prompted to give your issue a name
 - The game will automatically restart. Try to reproduce the issues you had before.
   - If everything is fine, click the `No Issue` button
-  - (todo) if you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
+  - If you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
     - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiples with previous fixes applied (todo: maybe remove this?)
 - (todo) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
