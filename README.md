@@ -12,7 +12,7 @@ A mod helping in finding mods responsible for issues using an extended binary se
   - (todo) if you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
     - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiples with previous fixes applied (todo: maybe remove this?)
 - (todo) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
-- (todo) once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
+- once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
 ## How does it work
 ### Handling crashes
@@ -54,7 +54,7 @@ However, it only force-loads mods in the mod set (this is what happens to mods i
 While solving the dependency issue, it has a few implications:
 - If required, a mod not in the mod set still can be loaded
 - This means that it can happen that when bisect identifies a minimal reproduction, that reproduction set actually only includes a mod which depends on the real culprit
-- This means that the mod set *can not show* which mod is at fault and that before that, some better tests must occur
+- This means that the mod set *can not show* which mod is at fault and that before blaming a mod some better tests must occur
 
 ## Development
 

@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [],
   "client": [
-    "MinecraftServerMixin"
+    "MinecraftServerMixin",
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

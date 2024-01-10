@@ -4,12 +4,16 @@ minecraft = "1.20.1"
 quilt_mappings = "1.20.1+build.23"
 quilt_loader = "0.22.0"
 
+spruce_ui = "5.0.0+1.20"
+
 quilted_fabric_api = "7.3.1+0.89.3-1.20.1"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
 quilt_mappings = { module = "org.quiltmc:quilt-mappings", version.ref = "quilt_mappings" }
 quilt_loader = { module = "org.quiltmc:quilt-loader", version.ref = "quilt_loader" }
+
+spruceui = { module = "dev.lambdaurora:spruceui", version.ref = "spruce_ui" }
 
 quilted_fabric_api = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api", version.ref = "quilted_fabric_api" }
 quilted_fabric_api_deprecated = { module = "org.quiltmc.quilted-fabric-api:quilted-fabric-api-deprecated", version.ref = "quilted_fabric_api" }
