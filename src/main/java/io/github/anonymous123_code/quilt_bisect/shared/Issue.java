@@ -37,16 +37,6 @@ public abstract class Issue {
 		public CrashIssue(String stacktrace) {
 			this(stacktrace, "", "");
 		}
-
-		public static CrashIssue createWithWorld(String stacktrace, String world) {
-			return new CrashIssue(stacktrace, "", world);
-		}
-		public static CrashIssue createWithServer(String stacktrace, String server) {
-			return new CrashIssue(stacktrace, server, "");
-		}
-		public static CrashIssue create(String stacktrace) {
-			return new CrashIssue(stacktrace);
-		}
 	}
 
 	public static class LogIssue extends Issue {
@@ -68,7 +58,7 @@ public abstract class Issue {
 
 	public static class UserIssue extends Issue {
 		public String name;
-		UserIssue(String name, String server, String world) {
+		public UserIssue(String name, String server, String world) {
 			super(Type.USER, server, world);
 			this.name = name;
 		}
