@@ -26,18 +26,29 @@ public class Bisect {
 	public static void parentBisect(Optional<String> crashLog, Optional<String> crashLogPath) throws IOException, NoSuchAlgorithmException {
 		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
 		var modset_path = config_dir.resolve("modSet.txt");
-		List<String> modSet;
-		if (Files.exists(modset_path)) {
-			modSet = readModSet(modset_path);
-			Files.delete(modset_path);
-		} else throw new RuntimeException("In bisect, but run was unable to write mod set file");
+		var sections_path = config_dir.resolve("sections.txt");
+		List<String> modSet = readModSet(modset_path);
+		List<Integer> sections = readSections(sections_path);
+
 
 		String modSetHash = generateModSetHash(modSet);
 		copyLatestLog(modSetHash);
 		var active_bisect = ActiveBisectConfig.getInstance();
 		active_bisect.bisectActive = true;
-		active_bisect.processRun(modSet, modSetHash, crashLog, crashLogPath);
+		active_bisect.processRun(modSet, sections, modSetHash, crashLog, crashLogPath);
 		active_bisect.safe(false);
+	}
+
+	private static List<Integer> readSections(Path sectionsPath) throws IOException {
+		if (Files.exists(sectionsPath)) {
+			var resultUnprocessed = Files.readAllLines(sectionsPath);
+			Files.delete(sectionsPath);
+			var result = new ArrayList<Integer>(resultUnprocessed.size());
+			for (String modSectionUnprocessed : resultUnprocessed) {
+				result.add(Integer.parseInt(modSectionUnprocessed, 10));
+			}
+			return result;
+		} else throw new RuntimeException("In bisect, but run was unable to read sections file");
 	}
 
 	private static void copyLatestLog(String modSetHash) throws IOException {
@@ -53,7 +64,11 @@ public class Bisect {
 	}
 
 	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException {
-		return Files.readAllLines(modSetPath);
+		if (Files.exists(modSetPath)) {
+			var result = Files.readAllLines(modSetPath);
+			Files.delete(modSetPath);
+			return result;
+		} else throw new RuntimeException("In bisect, but run was unable to read mod set file");
 	}
 
 	public static void childBisect(QuiltPluginContext context) throws IOException, ParseMetadataException {
@@ -61,6 +76,7 @@ public class Bisect {
 		HashMap<String, Path> loadOptions = getModOptions();
 		activeBisect.updateFiles(loadOptions);
 		loadModSet(context, calculateModSet(activeBisect), loadOptions);
+		activeBisect.safe(false);
 	}
 
 	public static HashMap<String, Path> getModOptions() throws IOException, ParseMetadataException {
@@ -93,33 +109,48 @@ public class Bisect {
 		}
 	}
 
-	private static List<ModSet.ModSetSection> calculateModSet(ActiveBisectConfig activeBisect) {
+	private static List<ModSet.Section> calculateModSet(ActiveBisectConfig activeBisect) {
 		Optional<ModSet> firstInvalidated = activeBisect.getFirstInvalidatedModSet();
 		if (firstInvalidated.isPresent()) {
 			return List.of(firstInvalidated.get().getFullSection());
 		} else {
 			// find the smallest mod set where an unsolved issue is present -> this is the mod set we're trying to debug
-			ModSet.ModSetSection smallestIssueModSetSection = activeBisect.findSmallestUnfixedModSet().getFullSection();
-			return bisect(smallestIssueModSetSection, activeBisect);
-			// TODO: detect when a minimal reproduction is reached (a set with all sections in length 1 errors)
-			// TODO: and mark the issue as fixed. Procceed testing larger (known issue) mod sets with that fix applied if it fixes it.
+			ModSet.Erroring smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
+			var result = new ArrayList<ModSet.Section>();
+			var done = true;
+			for (ModSet.Section s : (Iterable<ModSet.Section>) smallestIssueModSet::iterator) {
+				done = done && s.size() == 1;
+				result.addAll(bisect(s, activeBisect));
+			}
+			if (!done) {
+				return result;
+			} else {
+				var reproductionSet = new ArrayList<String>();
+				for (ModSet.Section section : result) {
+					reproductionSet.add(section.getListCopy().get(0));
+				}
+				activeBisect.issues.get(smallestIssueModSet.issueId).fix.reproductions.add(reproductionSet);
+				// TODO handle multiple issues and what to do when done
+				activeBisect.bisectActive = false;
+				return new ArrayList<>();
+			}
 		}
 	}
 
-	private static List<ModSet.ModSetSection> bisect(ModSet.ModSetSection parent, ActiveBisectConfig activeBisect, ModSet.ModSetSection... givenModSetSections) {
+	private static List<ModSet.Section> bisect(ModSet.Section parent, ActiveBisectConfig activeBisect, ModSet.Section... givenModSetSections) {
 		// If the size is 1, we found one culprit, and can return early
 		if (parent.size() == 1) return List.of(parent);
 		// Divide the mod set into halves
-		for (ModSet.ModSetSection[] half : parent.getPossibleArrayHalveCombinations()) {
+		for (ModSet.Section[] half : parent.getPossibleArrayHalveCombinations()) {
 			Optional<ModSet> half0ModSet = activeBisect.getModSet(half[0], givenModSetSections);
 			Optional<ModSet> half1ModSet = activeBisect.getModSet(half[1], givenModSetSections);
 			if (modSetExistsAndIsWorkingOrFixed(half0ModSet, activeBisect) && modSetExistsAndIsWorkingOrFixed(half1ModSet, activeBisect)) {
 				// If both have been tested (without any issue), two mods in the parent section must be required for the incompatibility. In this case treat both halves as different sections and bisect them.
-				var modSetSection = new ModSet.ModSetSection[givenModSetSections.length + 1];
+				var modSetSection = new ModSet.Section[givenModSetSections.length + 1];
 				System.arraycopy(givenModSetSections, 0, modSetSection, 1, givenModSetSections.length);
 				modSetSection[0] = half[1];
 				var result = bisect(half[0], activeBisect, modSetSection);
-				modSetSection = new ModSet.ModSetSection[givenModSetSections.length + result.size()];
+				modSetSection = new ModSet.Section[givenModSetSections.length + result.size()];
 				result.toArray(modSetSection);
 				System.arraycopy(givenModSetSections, 0, modSetSection, result.size(), givenModSetSections.length);
 				result.addAll(bisect(half[1], activeBisect, modSetSection));
@@ -137,16 +168,16 @@ public class Bisect {
 	}
 
 	private static boolean modSetExistsAndIsWorkingOrFixed(Optional<ModSet> modSet, ActiveBisectConfig activeBisect) {
-		return modSet.isPresent() && (modSet.get().isWorking() || activeBisect.issues.get(((ModSet.ErroringModSet) modSet.get()).issueId).fixed);
+		return modSet.isPresent() && modSet.get().isWorkingOrFixed(activeBisect);
 	}
 
-	private static void loadModSet(QuiltPluginContext context, List<ModSet.ModSetSection> mods, HashMap<String, Path> loadOptions) throws IOException {
+	private static void loadModSet(QuiltPluginContext context, List<ModSet.Section> mods, HashMap<String, Path> loadOptions) throws IOException {
 		var sectionIndices = new ArrayList<Integer>(mods.size());
 		sectionIndices.add(0);
 		var flatMapModIds = new ArrayList<String>();
-		for (ModSet.ModSetSection modSection : mods) {
+		for (ModSet.Section modSection : mods) {
 			sectionIndices.add(flatMapModIds.size() + modSection.size());
-			flatMapModIds.addAll(modSection.getArrayListCopy());
+			flatMapModIds.addAll(modSection.getListCopy());
 		}
 
 		loadModSet(context, flatMapModIds, sectionIndices, loadOptions);

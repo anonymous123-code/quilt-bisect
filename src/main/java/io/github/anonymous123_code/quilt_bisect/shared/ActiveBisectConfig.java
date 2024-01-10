@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonParseException;
-import com.google.gson.annotations.SerializedName;
 import org.quiltmc.loader.api.QuiltLoader;
 
 import java.io.IOException;
@@ -20,11 +19,7 @@ public class ActiveBisectConfig {
 		return INSTANCE;
 	}
 
-	private ActiveBisectConfig() {
-		bisectActive = false;
-		modSets = new HashMap<>();
-		issues = new ArrayList<>();
-	}
+	private ActiveBisectConfig() {}
 
 	private static ActiveBisectConfig create() {
 		if (!Files.exists(configDirectory)) {
@@ -63,22 +58,22 @@ public class ActiveBisectConfig {
 			.setPrettyPrinting()
 			.registerTypeAdapter(ModSet.class, (JsonDeserializer<ModSet>) (jsonElement, type, jsonDeserializationContext) -> {
 				if (jsonElement.getAsJsonObject().get("working").getAsBoolean()) {
-					return new Gson().fromJson(jsonElement, ModSet.WorkingModSet.class);
+					return new Gson().fromJson(jsonElement, ModSet.Working.class);
 				} else {
-					return new Gson().fromJson(jsonElement, ModSet.ErroringModSet.class);
+					return new Gson().fromJson(jsonElement, ModSet.Erroring.class);
 				}
 			})
 			.registerTypeAdapter(Issue.class, (JsonDeserializer<Issue>) (jsonElement, type, jsonDeserializationContext) -> {
 				var name = jsonElement.getAsJsonObject().get("type").getAsString();
 				switch (name) {
 					case "crash" -> {
-						return new Gson().fromJson(jsonElement, CrashIssue.class);
+						return new Gson().fromJson(jsonElement, Issue.CrashIssue.class);
 					}
 					case "log" -> {
-						return new Gson().fromJson(jsonElement, LogIssue.class);
+						return new Gson().fromJson(jsonElement, Issue.LogIssue.class);
 					}
 					case "user" -> {
-						return new Gson().fromJson(jsonElement, UserIssue.class);
+						return new Gson().fromJson(jsonElement, Issue.UserIssue.class);
 					}
 					default -> throw new JsonParseException("Invalid Type");
 				}
@@ -93,14 +88,14 @@ public class ActiveBisectConfig {
 
 
 	public boolean bisectActive = false;
-	public HashMap<String, ModSet> modSets = new HashMap<>();
-	public ArrayList<Issue> issues = new ArrayList<>();
-	public HashMap<String, String> modIdToFile = new HashMap<>();
+	public final HashMap<String, ModSet> modSets = new HashMap<>();
+	public final ArrayList<Issue> issues = new ArrayList<>();
+	public final HashMap<String, String> modIdToFile = new HashMap<>();
 
 
-	public void processRun(List<String> modIdSet, String modSetHash, Optional<String> crashLog, Optional<String> crashLogPath) {
+	public void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, Optional<String> crashLog, Optional<String> crashLogPath) {
 		Optional<Integer> issue = getOrAddIssue(crashLog);
-		ModSet modSet = issue.isPresent() ? new ModSet.ErroringModSet(new ArrayList<>(modIdSet), issue.get(), crashLogPath.orElse("")) : new ModSet.WorkingModSet(new ArrayList<>(modIdSet));
+		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(new ArrayList<>(modIdSet), issue.get(), crashLogPath.orElse(""), new ArrayList<>(sections)) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
 		modSets.put(modSetHash, modSet);
 	}
 
@@ -135,17 +130,17 @@ public class ActiveBisectConfig {
 			var stacktrace = removeLikelyMixinPoison(BisectUtils.extractStackTrace(crashLog.get()));
 			for (int issueIndex = 0; issueIndex < issues.size(); issueIndex++) {
 				var issue = issues.get(issueIndex);
-				if (issue instanceof CrashIssue && removeLikelyMixinPoison(((CrashIssue) issue).stacktrace).equals(stacktrace)) {
+				if (issue instanceof Issue.CrashIssue && removeLikelyMixinPoison(((Issue.CrashIssue) issue).stacktrace).equals(stacktrace)) {
 					return Optional.of(issueIndex);
 				}
 			}
-			issues.add(new CrashIssue(stacktrace));
+			issues.add(new Issue.CrashIssue(stacktrace));
 			return Optional.of(issues.size() - 1);
 		} else return Optional.empty();
 	}
 
 	public String removeLikelyMixinPoison(String oldStacktrace) {
-		return oldStacktrace.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler$");
+		return oldStacktrace.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$");
 	}
 
 	public Optional<ModSet> getFirstInvalidatedModSet() {
@@ -155,96 +150,26 @@ public class ActiveBisectConfig {
 		return Optional.empty();
 	}
 
-	public Optional<ModSet> getModSet(ModSet.ModSetSection first, ModSet.ModSetSection... modSetSections) {
-        ArrayList<String> mods = new ArrayList<>(first.getArrayListCopy());
-		for (ModSet.ModSetSection modSetSection : modSetSections) {
-			mods.addAll(modSetSection.getArrayListCopy());
+	public Optional<ModSet> getModSet(ModSet.Section first, ModSet.Section... sections) {
+        ArrayList<String> mods = new ArrayList<>(first.getListCopy());
+		for (ModSet.Section section : sections) {
+			mods.addAll(section.getListCopy());
 		}
 		Collections.sort(mods);
 		return modSets.values().stream().filter(it -> mods.equals(it.modSet)).findAny();
 	}
 
-	public ModSet findSmallestUnfixedModSet() {
-		ModSet smallest = null;
+	public ModSet.Erroring findSmallestUnfixedModSet() {
+		ModSet.Erroring smallest = null;
 		int smallestSize = Integer.MAX_VALUE;
 		for (var set : modSets.values()) {
-			if (set.working) continue;
+			if (set.isWorkingOrFixed(this)) continue;
 			if (set.modSet.size() < smallestSize) {
-				smallest = set;
+				smallest = (ModSet.Erroring) set;
 				smallestSize = set.modSet.size();
 			}
 		}
 		return smallest;
 	}
 
-	public static abstract class Issue {
-		public String world;
-		public String server;
-		public boolean fixed;
-		public IssueType type;
-
-		private Issue(IssueType type, String server, String world) {
-			if (!(server.isEmpty() || world.isEmpty())) throw new IllegalArgumentException("Server or World must be empty");
-			this.type = type;
-			this.server = server;
-			this.world = world;
-		}
-	}
-
-	public enum IssueType {
-		@SerializedName("crash")
-		CRASH(),
-		@SerializedName("log")
-		LOG(),
-		@SerializedName("user")
-		USER()
-	}
-
-	public static class CrashIssue extends Issue {
-		public final String stacktrace;
-
-		CrashIssue(String stacktrace, String server, String world) {
-			super(IssueType.CRASH, server, world);
-			this.stacktrace = stacktrace;
-		}
-
-		public CrashIssue(String stacktrace) {
-			this(stacktrace, "", "");
-		}
-
-		public static CrashIssue createWithWorld(String stacktrace, String world) {
-			return new CrashIssue(stacktrace, "", world);
-		}
-		public static CrashIssue createWithServer(String stacktrace, String server) {
-			return new CrashIssue(stacktrace, server, "");
-		}
-		public static CrashIssue create(String stacktrace) {
-			return new CrashIssue(stacktrace);
-		}
-	}
-
-	public static class LogIssue extends Issue {
-		public String name;
-		public boolean regex;
-		public String logger;
-		public String message;
-		public String level;
-
-		LogIssue(String server, String world, String name, String logger, String message, String level, boolean regex) {
-			super(IssueType.LOG, server, world);
-			this.name = name;
-			this.logger = logger;
-			this.message = message;
-			this.level = level;
-			this.regex = regex;
-		}
-	}
-
-	public static class UserIssue extends Issue {
-		public String name;
-		UserIssue(String name, String server, String world) {
-			super(IssueType.USER, server, world);
-			this.name = name;
-		}
-	}
 }
