@@ -4,5 +4,9 @@
   "gui.bisect.start.screen": "Bisect: Start Bisect",
   "gui.bisect.continue": "Continue Bisect",
   "gui.bisect.new_issue.screen": "Create New Issue",
-  "gui.bisect.new_issue": "New Issue"
+  "gui.bisect.new_issue": "New Issue",
+  "gui.bisect.new_issue.auto_join.none": "No auto join",
+  "gui.bisect.new_issue.auto_join.world": "Join world",
+  "gui.bisect.new_issue.auto_join.server": "Join server",
+  "gui.bisect.new_issue.auto_join.name": "Auto Join World/Server name"
 }
