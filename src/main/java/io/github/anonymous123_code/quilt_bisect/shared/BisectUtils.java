@@ -1,5 +1,9 @@
 package io.github.anonymous123_code.quilt_bisect.shared;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
@@ -31,4 +35,25 @@ public class BisectUtils {
 		for (byte byt : bytes) result.append(Integer.toString((byt & 0xff) + 0x100, 16).substring(1));
 		return result.toString();
 	}
+
+	@NotNull
+	public static Result getAutoJoinData() {
+		String autoJoinName;
+		AutoTest.AutoJoinType autoJoinMode = AutoTest.AutoJoinType.None;
+		if (Files.exists(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
+			String[] s;
+			try {
+				s = Files.readString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			autoJoinMode = AutoTest.AutoJoinType.from(s[0]);
+			autoJoinName = autoJoinMode != AutoTest.AutoJoinType.None ? s[1] : "";
+		} else {
+			autoJoinName = "";
+		}
+		return new Result(autoJoinName, autoJoinMode);
+	}
+
+	public record Result(String autoJoinName, AutoTest.AutoJoinType autoJoinMode) {}
 }

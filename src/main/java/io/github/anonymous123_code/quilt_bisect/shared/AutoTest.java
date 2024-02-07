@@ -10,7 +10,20 @@ public record AutoTest(
 ) {
 
 	public enum AutoJoinType {
-		None, World, Server, Realm, LastJoined
+		None, World, Server, Realm, LastJoined;
+		public static AutoJoinType from(String string) {
+			return switch (string) {
+				case "world" -> World;
+				case "server" -> Server;
+				case "realm" -> Realm;
+				default -> None;
+			};
+		}
+
+		@Override
+		public String toString() {
+			return super.name().toLowerCase();
+		}
 	}
 }
 

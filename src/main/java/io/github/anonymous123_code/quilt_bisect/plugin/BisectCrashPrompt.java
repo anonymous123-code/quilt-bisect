@@ -1,6 +1,5 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import org.jetbrains.annotations.Nullable;
@@ -9,8 +8,6 @@ import javax.swing.*;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.text.NumberFormat;
 import java.text.ParseException;
 
@@ -121,31 +118,11 @@ public class BisectCrashPrompt extends JOptionPane {
 		tabs.add("Full crash log", createTextArea(crashLog));
 		dialogInfo.add(tabs, BorderLayout.CENTER);
 
-		String autoJoinName;
-		AutoTest.AutoJoinType autoJoinMode = AutoTest.AutoJoinType.None;
-		if (Files.exists(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
-			String[] s;
-			try {
-				s = Files.readString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-			autoJoinName = switch (s[0]) {
-				case "world" -> {
-					autoJoinMode = AutoTest.AutoJoinType.World;
-					yield s[1];
-				}
-				case "server" -> {
-					autoJoinMode = AutoTest.AutoJoinType.Server;
-					yield s[1];
-				}
-				default -> "";
-			};
-		} else {
-			autoJoinName = "";
-		}
+		BisectUtils.Result result = BisectUtils.getAutoJoinData();
 
-		dialogInfo.add(this.createAutoJoinPanel(new AutoTest(autoJoinMode, autoJoinName, "", false, 20 * 5, false)), BorderLayout.SOUTH);
+		dialogInfo.add(this.createAutoJoinPanel(new AutoTest(
+			result.autoJoinMode(),
+			result.autoJoinName(), "", false, 20 * 5, false)), BorderLayout.SOUTH);
 		return dialogInfo;
 	}
 

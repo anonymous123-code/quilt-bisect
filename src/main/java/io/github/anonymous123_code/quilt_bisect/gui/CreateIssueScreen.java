@@ -8,6 +8,7 @@ import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -38,29 +39,9 @@ public class CreateIssueScreen extends SpruceScreen {
 	@Override
 	protected void init() {
 		super.init();
-		String autoJoinName;
-		if (Files.exists(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
-			String[] s;
-			try {
-				s = Files.readString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-			autoJoinName = switch (s[0]) {
-				case "world" -> {
-					autoJoinMode = AutoJoinType.World;
-					yield s[1];
-				}
-				case "server" -> {
-					autoJoinMode = AutoJoinType.Server;
-					yield s[1];
-				}
-				default -> "";
-			};
-		} else {
-			autoJoinName = "";
-		}
-		addOptions(autoJoinName);
+		BisectUtils.Result result = BisectUtils.getAutoJoinData();
+		this.autoJoinMode = AutoJoinType.from(result.autoJoinMode());
+		addOptions(result.autoJoinName());
 		addCancelContinueButtons();
 	}
 
@@ -84,7 +65,7 @@ public class CreateIssueScreen extends SpruceScreen {
 			20,
 			autoJoinMode.text,
 			button -> {
-				autoJoinMode = autoJoinMode.nextCycle();
+				autoJoinMode = autoJoinMode.nextCycle(false); // TODO: Change bool based on wether alt is down or not
 				button.setMessage(autoJoinMode.text);
 			}
 		));
@@ -154,19 +135,33 @@ public class CreateIssueScreen extends SpruceScreen {
 	public enum AutoJoinType {
 		None(Text.translatable("gui.bisect.new_issue.auto_join.none")),
 		World(Text.translatable("gui.bisect.new_issue.auto_join.world")),
-		Server(Text.translatable("gui.bisect.new_issue.auto_join.server"));
+		Server(Text.translatable("gui.bisect.new_issue.auto_join.server")),
+		LasJoined(Text.translatable("gui.bisect.new_issue.auto_join.last_joined")),
+		Realm(Text.translatable("gui.bisect.new_issue.auto_join.realm"));
+
 		public final Text text;
 
 		AutoJoinType(Text text) {
 			this.text = text;
 		}
 
-		AutoJoinType nextCycle() {
-			return switch (this) {
-				case None -> World;
-				case World -> Server;
-				case Server -> None;
-			};
+		AutoJoinType nextCycle(boolean activateHidden) {
+			if (activateHidden) {
+				return switch (this) {
+					case None -> World;
+					case World -> Server;
+					case Server -> LasJoined;
+					case LasJoined -> Realm;
+					case Realm -> None;
+				};
+			} else {
+				return switch (this) {
+					case None -> World;
+					case World -> Server;
+					case Server -> LasJoined;
+					case LasJoined, Realm -> None;
+				};
+			}
 		}
 
 		AutoTest.AutoJoinType convertToAutoTest() {
@@ -174,6 +169,18 @@ public class CreateIssueScreen extends SpruceScreen {
 				case World -> AutoTest.AutoJoinType.World;
 				case Server -> AutoTest.AutoJoinType.Server;
 				case None -> AutoTest.AutoJoinType.None;
+				case Realm -> AutoTest.AutoJoinType.Realm;
+				case LasJoined -> AutoTest.AutoJoinType.LastJoined;
+			};
+		}
+
+		static AutoJoinType from(AutoTest.AutoJoinType other) {
+			return switch (other) {
+				case LastJoined -> LasJoined;
+				case Realm -> Realm;
+				case None -> None;
+				case Server -> Server;
+				case World -> World;
 			};
 		}
 	}
