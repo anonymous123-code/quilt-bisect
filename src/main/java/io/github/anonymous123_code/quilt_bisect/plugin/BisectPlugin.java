@@ -36,7 +36,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			ActiveBisectConfig config = ActiveBisectConfig.getInstance();
 
 			var crashLogFile = logFileManager.getNew();
-			if (config.bisectActive) {
+			if (config.isActive()) {
 				try {
 					Bisect.parentBisect(crashLogFile.isEmpty() ? Optional.empty() : Optional.of(Files.readString(crashLogFile.get())), crashLogFile.map(file -> file.getFileName().toString()));
 				} catch (IOException | NoSuchAlgorithmException e) {
@@ -48,7 +48,9 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 				} else {
 					try {
 						var crashLog = Files.readString(crashLogFile.get());
-						if (BisectPluginUi.openDialog(exitCode.get(), crashLog)) {
+						var active_bisect = ActiveBisectConfig.getInstance();
+						active_bisect.bisectSettings = BisectPluginUi.openDialog(exitCode.get(), crashLog);
+						if (active_bisect.isActive()) {
 							Bisect.parentBisect(Optional.of(crashLog), Optional.of(crashLogFile.get().getFileName().toString()));
 						} else {
 							System.exit(exitCode.get());
@@ -90,7 +92,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		}
 		ActiveBisectConfig.update();
 		var activeConfig = ActiveBisectConfig.getInstance();
-		if (activeConfig.bisectActive) {
+		if (activeConfig.isActive()) {
 			Bisect.childBisect(context);
 		} else {
 			var  options = Bisect.getModOptions();

@@ -23,7 +23,7 @@ public class TitleScreenMixin {
 	)
 	public void init(CallbackInfo ci) {
 		var conf = ActiveBisectConfig.getInstance();
-		if(this.doBackgroundFade && !conf.bisectActive && !conf.issues.isEmpty()) {
+		if(this.doBackgroundFade && !conf.isActive() && !conf.issues.isEmpty()) {
 			MinecraftClient.getInstance().setScreen(new BisectSummaryScreen());
 		}
 	}

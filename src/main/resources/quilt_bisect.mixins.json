@@ -6,6 +6,8 @@
   "mixins": [],
   "client": [
     "ClientMainMixin",
+    "ConnectScreenMixin",
+    "MinecraftClientMixin",
     "MinecraftServerMixin",
     "TitleScreenMixin"
   ],

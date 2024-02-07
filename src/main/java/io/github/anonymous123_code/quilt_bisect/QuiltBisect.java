@@ -21,7 +21,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint {
 	@Override
 	public void onInitialize(ModContainer mod) {
 		var bisectConfig = ActiveBisectConfig.getInstance();
-		if (bisectConfig.bisectActive) {
+		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
 				screen.getButtons().add(ButtonWidget.builder(Text.of("No Issue"), buttonWidget -> GracefulTerminator.gracefullyTerminate(56)).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH - 5, 0).build());
 				screen.getButtons().add(ButtonWidget.builder(Text.of("Manual Issue"), buttonWidget -> screen.getClient().setScreen(new SelectIssueScreen(screen))).position(screen.width / 2 + 5, 0).build());

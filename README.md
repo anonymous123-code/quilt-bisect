@@ -56,6 +56,15 @@ While solving the dependency issue, it has a few implications:
 - This means that it can happen that when bisect identifies a minimal reproduction, that reproduction set actually only includes a mod which depends on the real culprit
 - This means that the mod set *can not show* which mod is at fault and that before blaming a mod some better tests must occur
 
+## Issues with making autotest be per issue
+- A bisect containing an unsolved crash must solve that crash first -> it is not optional wether a crash should be an issue or not -> A prompt after a new crash prompting additional settings would interfere with the optimal workflow
+- Crashes are the easiest to detect fails on -> should not require interaction
+- Marking a version as good implies that no existing issue is on that version. However, if autotest is per issue, only one issue can be accounted for
+
+Solutions:
+- Make autotest per bisect (I choose this one)
+- Enumerate over all issue tests and prompt new autotest params for ach new crash
+
 ## Development
 
 For testing, I also recommend [Quilt Crasher](https://github.com/anonymous123-code/quilt-crasher), which I developed to enable testing of this kind of mod.

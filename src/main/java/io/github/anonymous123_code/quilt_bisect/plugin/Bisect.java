@@ -34,7 +34,6 @@ public class Bisect {
 		String modSetHash = generateModSetHash(modSet);
 		copyLatestLog(modSetHash);
 		var active_bisect = ActiveBisectConfig.getInstance();
-		active_bisect.bisectActive = true;
 		active_bisect.processRun(modSet, sections, modSetHash, crashLog, crashLogPath);
 		active_bisect.safe(false);
 	}
@@ -131,7 +130,7 @@ public class Bisect {
 				}
 				activeBisect.issues.get(smallestIssueModSet.issueId).fix.reproductions.add(reproductionSet);
 				// TODO handle multiple issues and what to do when done
-				activeBisect.bisectActive = false;
+				activeBisect.bisectSettings = null;
 				return new ArrayList<>();
 			}
 		}
@@ -157,10 +156,10 @@ public class Bisect {
 				return result;
 			} else if (modSetExistsAndIsWorkingOrFixed(half0ModSet, activeBisect)) {
 				// If the first half already has been tested, test the other half
-				return new ArrayList<>(Arrays.asList(half[1]));
+				return new ArrayList<>(Collections.singletonList(half[1]));
 			} else if (modSetExistsAndIsWorkingOrFixed(half1ModSet, activeBisect)) {
 				// If the second half already has been tested, test the other half
-				return new ArrayList<>(Arrays.asList(half[0]));
+				return new ArrayList<>(Collections.singletonList(half[0]));
 			}
 		}
 		// If no halves have been tested, test the first one

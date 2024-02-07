@@ -5,16 +5,11 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 
 public abstract class Issue {
-	public String world;
-	public String server;
 	public Fix fix = new Fix();
 	public Type type;
 
-	private Issue(Type type, String server, String world) {
-		if (!(server.isEmpty() || world.isEmpty())) throw new IllegalArgumentException("Server or World must be empty");
+	private Issue(Type type) {
 		this.type = type;
-		this.server = server;
-		this.world = world;
 	}
 
 	public enum Type {
@@ -29,13 +24,9 @@ public abstract class Issue {
 	public static class CrashIssue extends Issue {
 		public final String stacktrace;
 
-		CrashIssue(String stacktrace, String server, String world) {
-			super(Type.CRASH, server, world);
+		CrashIssue(String stacktrace) {
+			super(Type.CRASH);
 			this.stacktrace = stacktrace;
-		}
-
-		public CrashIssue(String stacktrace) {
-			this(stacktrace, "", "");
 		}
 	}
 
@@ -46,8 +37,8 @@ public abstract class Issue {
 		public String message;
 		public String level;
 
-		LogIssue(String server, String world, String name, String logger, String message, String level, boolean regex) {
-			super(Type.LOG, server, world);
+		LogIssue(String name, String logger, String message, String level, boolean regex) {
+			super(Type.LOG);
 			this.name = name;
 			this.logger = logger;
 			this.message = message;
@@ -63,8 +54,8 @@ public abstract class Issue {
 
 	public static class UserIssue extends Issue implements NamedIssue {
 		public String name;
-		public UserIssue(String name, String server, String world) {
-			super(Type.USER, server, world);
+		public UserIssue(String name) {
+			super(Type.USER);
 			this.name = name;
 		}
 

@@ -45,6 +45,10 @@ public class ActiveBisectConfig {
 		return INSTANCE == this;
 	}
 
+	public boolean isActive() {
+		return this.bisectSettings != null;
+	}
+
 	public void safe(boolean force) throws IOException {
 		if (!force && !isUpToDate()) return;
 		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
@@ -86,8 +90,7 @@ public class ActiveBisectConfig {
         }
     }
 
-
-	public boolean bisectActive = false;
+	public AutoTest bisectSettings = null;
 	public final HashMap<String, ModSet> modSets = new HashMap<>();
 	public final ArrayList<Issue> issues = new ArrayList<>();
 	public final HashMap<String, String> modIdToFile = new HashMap<>();
