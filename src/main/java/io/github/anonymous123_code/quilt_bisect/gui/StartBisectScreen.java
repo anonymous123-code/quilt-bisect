@@ -58,7 +58,7 @@ public class StartBisectScreen extends CreateIssueScreen{
 			20,
 			autoJoinMode.text,
 			button -> {
-				autoJoinMode = autoJoinMode.nextCycle(false); // TODO: Change bool based on wether alt is down or not
+				autoJoinMode = autoJoinMode.nextCycle(Screen.hasAltDown());
 				button.setMessage(autoJoinMode.text);
 			}
 		));

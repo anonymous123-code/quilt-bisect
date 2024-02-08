@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public abstract class ModSet {
+	@SuppressWarnings("unused") // used in ActiveBisect config during serialization
 	public final boolean working;
 	public final ArrayList<String> modSet;
 	public final List<Integer> sections;
