@@ -7,37 +7,39 @@ import net.minecraft.text.Text;
 public abstract class FixedSizeGridScreen extends SpruceScreen {
 	protected final int ROW_COUNT;
 	protected final int COLUMN_COUNT;
-	protected final int ROW_HEIGHT;
-	protected final int COLUMN_WIDTH;
+	protected final int CELL_HEIGHT;
+	protected final int CELL_WIDTH;
 	protected final int HORIZONTAL_PADDING;
 	protected final int VERTICAL_PADDING;
 
-	protected FixedSizeGridScreen(Text title, int rowCount, int columnCount, int rowHeight, int columnWidth, int horizontalPadding, int verticalPadding) {
+	protected FixedSizeGridScreen(Text title, int rowCount, int columnCount, int cellHeight, int cellWidth, int horizontalPadding, int verticalPadding) {
 		super(title);
 		ROW_COUNT = rowCount;
 		COLUMN_COUNT = columnCount;
-		ROW_HEIGHT = rowHeight;
-		COLUMN_WIDTH = columnWidth;
+		CELL_HEIGHT = cellHeight;
+		CELL_WIDTH = cellWidth;
 		HORIZONTAL_PADDING = horizontalPadding;
 		VERTICAL_PADDING = verticalPadding;
 	}
 
 	protected Position corner(int row, int column) {
+		int perElementWidth = CELL_WIDTH + HORIZONTAL_PADDING;
+		int perElementHeight = CELL_HEIGHT + VERTICAL_PADDING;
 		return Position.of(
-			this.width / 2 - (COLUMN_WIDTH * COLUMN_COUNT / 2) + (COLUMN_WIDTH * column),
-			this.height / 2 - (ROW_HEIGHT * ROW_COUNT / 2) + (ROW_HEIGHT * row)
+			width / 2 - (perElementWidth * COLUMN_COUNT / 2) + (perElementWidth * column),
+			height / 2 - (perElementHeight * ROW_COUNT / 2) + (perElementHeight * row)
 		);
 	}
 
 	protected Position centerVertically(int row, int column, int height) {
-		return Position.of(corner(row, column), 0, (ROW_HEIGHT - height) / 2);
+		return Position.of(corner(row, column), 0, (CELL_HEIGHT - height) / 2);
 	}
 
 	protected Position centerHorizontally(int row, int column, int width) {
-		return Position.of(corner(row, column), (COLUMN_WIDTH - width) / 2, 0);
+		return Position.of(corner(row, column), (CELL_WIDTH - width) / 2, 0);
 	}
 
 	protected Position center(int row, int column, int width, int height) {
-		return Position.of(corner(row, column), (COLUMN_WIDTH - width) / 2, (ROW_HEIGHT - height) / 2);
+		return Position.of(corner(row, column), (CELL_WIDTH - width) / 2, (CELL_HEIGHT - height) / 2);
 	}
 }

@@ -5,10 +5,16 @@
   "gui.bisect.continue": "Continue Bisect",
   "gui.bisect.new_issue.screen": "Create New Issue",
   "gui.bisect.new_issue": "New Issue",
-  "gui.bisect.new_issue.auto_join.none": "No auto join",
-  "gui.bisect.new_issue.auto_join.world": "Join world",
-  "gui.bisect.new_issue.auto_join.server": "Join server",
-  "gui.bisect.new_issue.auto_join.realm": "Join realm",
-  "gui.bisect.new_issue.auto_join.last_joined": "Join last joined",
-  "gui.bisect.new_issue.auto_join.name": "Auto Join World/Server name"
+  "gui.bisect.start.auto_join.none": "No auto join",
+  "gui.bisect.start.auto_join.world": "Join world",
+  "gui.bisect.start.auto_join.server": "Join server",
+  "gui.bisect.start.auto_join.realm": "Join realm",
+  "gui.bisect.start.auto_join.last_joined": "Join last joined",
+  "gui.bisect.start.auto_join.name": "Auto Join World/Server name",
+  "gui.bisect.start.disable_world_saving": "Disable world saving",
+  "gui.bisect.start.auto_accept.enable": "Auto accept after",
+  "gui.bisect.start.auto_accept.time": "Time to wait before marking as working (ticks or 1/20 seconds)",
+  "gui.bisect.start.auto_accept.time.tooltip": "Time to wait before marking as working (ticks or 1/20 seconds)",
+  "gui.bisect.start.command.label": "Chat messages/commands to execute after join:",
+  "gui.bisect.start.command.input": "Input commands to run on auto join"
 }
