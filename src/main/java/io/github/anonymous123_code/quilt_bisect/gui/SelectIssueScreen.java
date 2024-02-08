@@ -53,7 +53,7 @@ public class SelectIssueScreen extends SpruceScreen {
 	}
 
 	private void newIssue() {
-		client.setScreen(new CreateIssueScreen(this, false));
+		client.setScreen(new CreateIssueScreen(this));
 	}
 
 	private void onCancel() {

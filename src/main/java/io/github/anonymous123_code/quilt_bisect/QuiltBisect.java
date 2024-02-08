@@ -1,7 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect;
 
-import io.github.anonymous123_code.quilt_bisect.gui.CreateIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
+import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
@@ -27,7 +27,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint {
 				screen.getButtons().add(ButtonWidget.builder(Text.of("Manual Issue"), buttonWidget -> screen.getClient().setScreen(new SelectIssueScreen(screen))).position(screen.width / 2 + 5, 0).build());
 			});
 		} else {
-			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> screen.getButtons().add(ButtonWidget.builder(Text.translatable("gui.bisect.start"), (w) -> screen.getClient().setScreen(new CreateIssueScreen(screen, true))).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build()));
+			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> screen.getButtons().add(ButtonWidget.builder(Text.translatable("gui.bisect.start"), (w) -> screen.getClient().setScreen(new StartBisectScreen(screen))).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build()));
 		}
 	}
 
