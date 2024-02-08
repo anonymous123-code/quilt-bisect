@@ -6,19 +6,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public abstract class ModSet {
-	public final boolean working;
 	public final ArrayList<String> modSet;
 	public final List<Integer> sections;
 	public boolean invalidated;
-	protected ModSet(boolean working, ArrayList<String> modSet, ArrayList<Integer> sections) {
-		this.working = working;
+	protected ModSet(ArrayList<String> modSet, ArrayList<Integer> sections) {
 		this.sections = sections;
 		this.invalidated = false;
 		this.modSet = modSet;
-	}
-
-	public boolean isWorking() {
-		return working;
 	}
 
 	public SectionIterator iterator() {
@@ -33,7 +27,7 @@ public abstract class ModSet {
 
 	public static class Working extends ModSet {
 		public Working(ArrayList<String> modSet, ArrayList<Integer> sections) {
-			super(true, modSet, sections);
+			super(modSet, sections);
 		}
 
 		@Override
@@ -47,7 +41,7 @@ public abstract class ModSet {
 		public final String crashLogPath;
 
 		public Erroring(ArrayList<String> modSet, int issueId, String crashLogPath, ArrayList<Integer> sections) {
-			super(false, modSet, sections);
+			super(modSet, sections);
 			this.issueId = issueId;
 			this.crashLogPath = crashLogPath;
 		}
