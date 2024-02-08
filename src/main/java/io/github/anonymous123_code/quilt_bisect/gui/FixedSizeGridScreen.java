@@ -26,8 +26,8 @@ public abstract class FixedSizeGridScreen extends SpruceScreen {
 		int perElementWidth = CELL_WIDTH + HORIZONTAL_PADDING;
 		int perElementHeight = CELL_HEIGHT + VERTICAL_PADDING;
 		return Position.of(
-			width / 2 - (perElementWidth * COLUMN_COUNT / 2) + (perElementWidth * column),
-			height / 2 - (perElementHeight * ROW_COUNT / 2) + (perElementHeight * row)
+			width / 2 - (perElementWidth * COLUMN_COUNT / 2 - HORIZONTAL_PADDING / 2) + (perElementWidth * column),
+			height / 2 - (perElementHeight * ROW_COUNT / 2 - VERTICAL_PADDING / 2) + (perElementHeight * row)
 		);
 	}
 
