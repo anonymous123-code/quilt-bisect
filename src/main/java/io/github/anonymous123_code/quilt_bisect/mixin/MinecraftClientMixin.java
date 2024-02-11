@@ -1,8 +1,10 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
+import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.resource.pack.ResourcePackManager;
 import net.minecraft.server.WorldStem;
 import net.minecraft.world.storage.WorldSaveStorage;
@@ -25,4 +27,9 @@ public class MinecraftClientMixin {
             throw new RuntimeException(e);
         }
     }
+
+	@Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("TAIL"))
+	public void disableAutoAcceptOnDisconnect(Screen screen, CallbackInfo ci) {
+		QuiltBisect.joinedTimestamp = 0;
+	}
 }
