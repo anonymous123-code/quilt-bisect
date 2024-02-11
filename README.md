@@ -6,7 +6,7 @@ A mod helping in finding mods responsible for issues using an extended binary se
 
 - This project uses Loader Plugins, `-Dloader.experimental.allow_loading_plugins=true` needs to be added to your JVM arguments.
 - Move the mods you want to test into a directory called `modsToBisect` in your minecraft folder
-- If your game crashes, a dialog will open asking if you want to bisect, else click the start bisect button at the top of your screen, and you will be prompted to give your issue a name
+- If your game crashes, a dialog will open asking if you want to bisect, else click the start bisect button at the top of your screen, and you will be prompted to give your issue a name. 
 - The game will automatically restart. Try to reproduce the issues you had before.
   - If everything is fine, click the `No Issue` button
   - If you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
@@ -15,6 +15,16 @@ A mod helping in finding mods responsible for issues using an extended binary se
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
 ## How does it work
+### Automatically mark things as working
+When starting a new bisect, you can configure bisect to
+- automatically join a world, server, realm, or the last joined one (Note that realms rely on ids and not on names)
+- automatically accept a mod set as working after a given time
+  - The time is in 1/20 seconds, and will start on world join if auto join is active, else when the title screen shows. If in single player, it will also wait for enough ticks to pass
+- automatically run commands or sending chat messages after auto joining.
+  - It will be treated as if you sent them from chat, and also work with client side commands
+- disable world saving (TODO)
+  - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active
+
 ### Handling crashes
 Being a loader plugin, bisect hooks into the Quilt's loader process at an incredibly early stage.
 There, it can create a new process that is actually running the game, and wait for that process to end.
@@ -28,8 +38,6 @@ Bisect will
 - [Handle crashes](#handling-crashes)
 - (TODO) Check for log messages using regexes (if possible)
 - Rely on user input
-
-(TODO) it will also automatically join worlds or servers
 
 ### Selecting the next mod set to test
 Bisect works using an extended version of binary search:
@@ -56,20 +64,15 @@ While solving the dependency issue, it has a few implications:
 - This means that it can happen that when bisect identifies a minimal reproduction, that reproduction set actually only includes a mod which depends on the real culprit
 - This means that the mod set *can not show* which mod is at fault and that before blaming a mod some better tests must occur
 
-## Issues with making autotest be per issue
-- A bisect containing an unsolved crash must solve that crash first -> it is not optional wether a crash should be an issue or not -> A prompt after a new crash prompting additional settings would interfere with the optimal workflow
-- Crashes are the easiest to detect fails on -> should not require interaction
-- Marking a version as good implies that no existing issue is on that version. However, if autotest is per issue, only one issue can be accounted for
-
-Solutions:
-- Make autotest per bisect (I choose this one)
-- Enumerate over all issue tests and prompt new autotest params for ach new crash
-
 ## Development
 
 For testing, I also recommend [Quilt Crasher](https://github.com/anonymous123-code/quilt-crasher), which I developed to enable testing of this kind of mod.
 
 ## Licensing
+
+While the code is ARR, this is only to prevent ports to other mod loaders or low-effort copies. Feel free to copy parts of the code for your mod. If your mod does similar things to this mod, credit me. You can also ask for me for permission. If it's not a port to another mod loader, I'll likely agree.
+
+---
 
 `PluginLogger`, `MinecraftServerMixin` and `GracefulTerminator` were mostly taken from https://github.com/comp500/ModVote.
 `BisectPlugin` also contains large parts of `ModvotePlugin` from that repo.
