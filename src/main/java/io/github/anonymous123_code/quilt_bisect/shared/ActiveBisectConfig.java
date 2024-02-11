@@ -46,7 +46,7 @@ public class ActiveBisectConfig {
 	}
 
 	public boolean isActive() {
-		return this.bisectSettings != null;
+		return bisectSettings != null;
 	}
 
 	public void safe(boolean force) throws IOException {

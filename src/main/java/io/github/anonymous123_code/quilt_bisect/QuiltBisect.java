@@ -3,6 +3,7 @@ package io.github.anonymous123_code.quilt_bisect;
 import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 import org.quiltmc.loader.api.ModContainer;
@@ -17,6 +18,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint {
 	// It is considered best practice to use your mod name as the logger's name.
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger("Quilt Bisect");
+	public static boolean shouldExecuteCommands = ActiveBisectConfig.getInstance().isActive() && ActiveBisectConfig.getInstance().bisectSettings.autoJoinType() != AutoTest.AutoJoinType.None;
 
 	@Override
 	public void onInitialize(ModContainer mod) {
