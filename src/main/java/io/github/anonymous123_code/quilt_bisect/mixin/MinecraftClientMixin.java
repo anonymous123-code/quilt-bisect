@@ -30,6 +30,8 @@ public class MinecraftClientMixin {
 
 	@Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("TAIL"))
 	public void disableAutoAcceptOnDisconnect(Screen screen, CallbackInfo ci) {
-		QuiltBisect.joinedTimestamp = 0;
+		if (ActiveBisectConfig.getInstance().isActive() && ActiveBisectConfig.getInstance().bisectSettings.autoJoinType() != AutoTest.AutoJoinType.None) { // Only disable auto accept if something was automatically joined
+			QuiltBisect.joinedTimestamp = 0;
+		}
 	}
 }

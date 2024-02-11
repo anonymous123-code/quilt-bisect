@@ -20,7 +20,8 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 	// It is considered best practice to use your mod name as the logger's name.
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger("Quilt Bisect");
-	public static boolean firstJoin = true;
+	// Gets set to false on world join if autoJoinType != None, else on title screen load
+	public static boolean firstTimeInAutoJoinScope = true;
 	public static long joinedTimestamp = -1;
 
 	@Override
