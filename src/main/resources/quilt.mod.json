@@ -6,7 +6,7 @@
 		"version": "${version}",
 		"metadata": {
 			"name": "Quilt Bisect",
-			"description": "A mod helping in blaming mods for issues (Better desc tbd)",
+			"description": "A Quilt mod & loader plugin for finding mods responsible for issues using a search algorithm derived from binary search. This includes n-way mod incompatibilities.",
 			"contributors": {
 				"anonymous123-code": "Owner"
 			},

@@ -1,6 +1,6 @@
 # Quilt Bisect
 
-A mod helping in finding mods responsible for issues using an extended binary search algorithm.
+A Quilt mod & loader plugin for finding mods responsible for issues using a search algorithm derived from binary search. This includes n-way mod incompatibilities.
 
 ## Usage
 
