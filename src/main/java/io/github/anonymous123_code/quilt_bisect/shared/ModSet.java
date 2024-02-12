@@ -1,9 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.shared;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 public abstract class ModSet {
 	@SuppressWarnings("unused") // used in ActiveBisect config during serialization
@@ -22,8 +20,16 @@ public abstract class ModSet {
 		return working;
 	}
 
-	public SectionIterator iterator() {
-		return new SectionIterator();
+	public List<Section> sections() {
+		List<Section> result = new ArrayList<>();
+		for (int sectionIndex = 0; sectionIndex < sections.size(); sectionIndex++) {
+			if (sectionIndex + 1 == sections.size()) {
+				result.add(new Section(sections.get(sectionIndex), modSet.size(), ModSet.this));
+			} else {
+				result.add(new Section(sections.get(sectionIndex), sections.get(sectionIndex + 1), ModSet.this));
+			}
+		}
+		return result;
 	}
 
 	public Section getFullSection() {
@@ -76,26 +82,6 @@ public abstract class ModSet {
 
 		public int size() {
 			return end - start;
-		}
-	}
-
-	public class SectionIterator implements Iterator<Section> {
-		private int sectionIndex = 0;
-
-		@Override
-		public boolean hasNext() {
-            return sectionIndex < sections.size();
-		}
-
-		@Override
-		public Section next() {
-			if (!hasNext()) throw new NoSuchElementException();
-			sectionIndex++;
-			if (sectionIndex == sections.size()) {
-                return new Section(sections.get(sectionIndex - 1), modSet.size(), ModSet.this);
-			} else {
-                return new Section(sections.get(sectionIndex - 1), sections.get(sectionIndex), ModSet.this);
-			}
 		}
 	}
 }
