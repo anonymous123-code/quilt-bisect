@@ -135,9 +135,22 @@ public class Bisect {
 				ModSet.Section section = sections.get(i);
 
 				if (section.size() != 1) {
-					// We will only bisect this section
-					result.addAll(sections.subList(i + 1, sections.size()));
-					result.addAll(bisect(section, activeBisect, result.toArray(new ModSet.Section[]{})));
+					var tail = sections.subList(i + 1, sections.size());
+					// This is unsorted DO NOT RETURN
+					var givenModSetSections = new ModSet.Section[result.size() + tail.size()];
+
+					result.toArray(givenModSetSections);
+					System.arraycopy(
+						tail.toArray(new ModSet.Section[0]),
+						0,
+						givenModSetSections,
+						result.size(),
+						tail.size()
+					);
+
+					result.addAll(bisect(section, activeBisect, givenModSetSections));
+					result.addAll(tail);
+
 					return result;
 				}
 
@@ -170,7 +183,6 @@ public class Bisect {
 			)) {
 				// If both have been tested (without any issue), two mods in the parent section must be required for the incompatibility. In this case treat both halves as different sections and bisect them.
 				if (half[0].size() > 1) {
-					// Fixme for some reason there were more sections then necessary. I blame this part
 					var modSetSection = new ModSet.Section[givenModSetSections.length + 1];
 					System.arraycopy(givenModSetSections, 0, modSetSection, 1, givenModSetSections.length);
 					modSetSection[0] = half[1];
@@ -214,6 +226,10 @@ public class Bisect {
 		loadModSet(context, flatMapModIds, sectionIndices, loadOptions);
 	}
 
+	/**
+	 * @param mods MUST BE SORTED if more than one section exists
+	 * @param sectionIndices must be empty or get(0) == 0
+	 */
 	public static void loadModSet(QuiltPluginContext context, List<String> mods, List<Integer> sectionIndices, HashMap<String, Path> loadOptions) throws IOException {
 		var inBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Quilt Bisect - Loaded"));
 		var outOfBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
@@ -236,7 +252,12 @@ public class Bisect {
 			}
 		}
 
-		Collections.sort(mods);
+		if (sectionIndices.size() == 1) {
+			// Sorting is safe under these conditions
+			mods.sort(null);
+		} else {
+			// TODO Check that mods is sorted
+		}
 
 		Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", mods));
 		Files.writeString(

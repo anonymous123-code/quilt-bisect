@@ -96,6 +96,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			Bisect.childBisect(context);
 		} else {
 			var  options = Bisect.getModOptions();
+			// Safe because only one section exists
 			Bisect.loadModSet(context, new ArrayList<>(options.keySet()), List.of(0), options);
 		}
 		System.setProperty("quiltBisect.active", "true");
