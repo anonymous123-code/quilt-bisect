@@ -135,22 +135,8 @@ public class Bisect {
 				ModSet.Section section = sections.get(i);
 
 				if (section.size() != 1) {
-					var tail = sections.subList(i + 1, sections.size());
-					// This is unsorted DO NOT RETURN
-					var givenModSetSections = new ModSet.Section[result.size() + tail.size()];
-
-					result.toArray(givenModSetSections);
-					System.arraycopy(
-						tail.toArray(new ModSet.Section[0]),
-						0,
-						givenModSetSections,
-						result.size(),
-						tail.size()
-					);
-
-					result.addAll(bisect(section, activeBisect, givenModSetSections));
-					result.addAll(tail);
-
+					result.addAll(sections.subList(i + 1, sections.size()));
+					result.addAll(bisect(section, activeBisect, result.toArray(new ModSet.Section[]{})));
 					return result;
 				}
 
@@ -206,7 +192,7 @@ public class Bisect {
 			}
 		}
 		// If no halves have been tested, test the first one
-		return new ArrayList<>(Arrays.asList(parent.getPossibleArrayHalveCombinations()[0][0]));
+		return new ArrayList<>(Collections.singletonList(parent.getPossibleArrayHalveCombinations()[0][0]));
 	}
 
 	private static boolean modSetExistsAndIsWorkingOrFixed(Optional<ModSet> modSet, ActiveBisectConfig activeBisect) {
@@ -214,6 +200,8 @@ public class Bisect {
 	}
 
 	private static void loadModSet(QuiltPluginContext context, List<ModSet.Section> mods, HashMap<String, Path> loadOptions) throws IOException {
+		mods.sort(Comparator.comparingInt(ModSet.Section::start));
+
 		var sectionIndices = new ArrayList<Integer>(mods.size());
 		sectionIndices.add(0);
 		var flatMapModIds = new ArrayList<String>();
