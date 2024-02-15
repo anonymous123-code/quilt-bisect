@@ -160,8 +160,11 @@ public class ActiveBisectConfig {
 		for (ModSet.Section section : sections) {
 			mods.addAll(section.getListCopy());
 		}
-		Collections.sort(mods);
-		return modSets.values().stream().filter(it -> mods.equals(it.modSet)).findAny();
+		return getModSet(mods);
+	}
+	public Optional<ModSet> getModSet(List<String> modIds) {
+		Collections.sort(modIds);
+		return modSets.values().stream().filter(it -> modIds.equals(it.modSet)).findAny();
 	}
 
 	public ModSet.Erroring findSmallestUnfixedModSet() {
@@ -177,4 +180,19 @@ public class ActiveBisectConfig {
 		return smallest;
 	}
 
+	public List<Integer> findFixedIssues() {
+		var result = new ArrayList<Integer>();
+		ISSUES:
+		for (int i = 0; i < issues.size(); i++) {
+			for (ModSet modSet : modSets.values()) {
+				if (modSet instanceof ModSet.Erroring erroring && erroring.issueId == i) {
+					if (!modSet.isWorkingOrFixed(this)) {
+						continue ISSUES;
+					}
+				}
+			}
+			result.add(i);
+		}
+		return result;
+	}
 }

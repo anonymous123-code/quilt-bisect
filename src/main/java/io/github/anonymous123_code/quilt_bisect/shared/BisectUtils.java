@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class BisectUtils {
@@ -53,6 +56,62 @@ public class BisectUtils {
 			autoJoinName = "";
 		}
 		return new Result(autoJoinName, autoJoinMode);
+	}
+
+	public static Set<Set<String>> mergeReproductions(ArrayList<ArrayList<String>> reproductions) {
+		// Reproduction takes the form (a ∧ b ∧ c)∨(a ∧ b ∧ d)∨(a ∧ e) (Disjunctions of conjunctions, notably without negations)
+		// Assuming that that term is equivalent to the issue occurring, we can negate it to get the term for the issue not occurring
+		// ¬((a ∧ b ∧ ...)∨...)=(¬a ∨ ¬b ∨ ...)∧... (Conjunctions of disjunctions of negations, all elements inside the disjunction are negated)
+		Set<Set<String>> mergedFixes = new HashSet<>();
+		// Should this ever become a performance issue, it's complexity might be reducible to log(len(reproductions)) using a divide and conquer algorithm
+		for (var reproduction : reproductions) {
+			if (mergedFixes.isEmpty()) {
+				for (var mod : reproduction) {
+					HashSet<String> fix = new HashSet<>();
+					fix.add(mod);
+					mergedFixes.add(fix);
+				}
+			} else {
+				Set<Set<String>> newFixes = new HashSet<>();
+				for (var mod : reproduction) {
+					for (Set<String> fix : mergedFixes) {
+						var newVariant = new HashSet<>(fix);
+						newVariant.add(mod);
+						newFixes.add(newVariant);
+					}
+				}
+				mergedFixes = newFixes;
+			}
+		}
+		return simplifyFixes(mergedFixes);
+	}
+
+	public static Set<Set<String>> mergeFixes(Set<Set<String>> first, Set<Set<String>> second) {
+		Set<Set<String>> result = new HashSet<>();
+		for (var fix1 : first) {
+			for (var fix2 : second) {
+				var mergedFix = new HashSet<>(fix1);
+				mergedFix.addAll(fix2);
+				result.add(mergedFix);
+			}
+		}
+		return simplifyFixes(result);
+	}
+
+	private static Set<Set<String>> simplifyFixes(Set<Set<String>> fixes) {
+		Set<Set<String>> simplifiedFixes = new HashSet<>();
+
+		OUTER_FOR:
+		for (var fix : fixes) {
+			for (var other : fixes) {
+				if (other != fix && fix.containsAll(other)) {
+					continue OUTER_FOR;
+				}
+			}
+			simplifiedFixes.add(fix);
+		}
+
+		return simplifiedFixes;
 	}
 
 	public record Result(String autoJoinName, AutoTest.AutoJoinType autoJoinMode) {}

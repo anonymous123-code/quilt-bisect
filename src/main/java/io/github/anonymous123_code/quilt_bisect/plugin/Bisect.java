@@ -2,6 +2,7 @@ package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
 import org.jetbrains.annotations.NotNull;
 import org.quiltmc.loader.api.ModMetadata;
@@ -122,36 +123,74 @@ public class Bisect {
 		}
 	}
 
-	private static List<ModSet.Section> calculateModSet(ActiveBisectConfig activeBisect) {
+	private static SectionList calculateModSet(ActiveBisectConfig activeBisect) {
 		Optional<ModSet> firstInvalidated = activeBisect.getFirstInvalidatedModSet();
 		if (firstInvalidated.isPresent()) {
-			return List.of(firstInvalidated.get().getFullSection());
+			return SectionList.fromSections(List.of(firstInvalidated.get().getFullSection()));
 		} else {
 			// find the smallest mod set where an unsolved issue is present -> this is the mod set we're trying to debug
+			var modSet = testFixes(activeBisect);
+			if (modSet.isPresent()) return modSet.get();
+
 			ModSet.Erroring smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
-			var result = new ArrayList<ModSet.Section>();
-			var sections = smallestIssueModSet.sections();
-			for (int i = 0; i < sections.size(); i++) {
-				ModSet.Section section = sections.get(i);
+			while (smallestIssueModSet != null) {
+				modSet = debugIssueModSet(smallestIssueModSet, activeBisect);
+				if (modSet.isPresent()) return modSet.get();
 
-				if (section.size() != 1) {
-					result.addAll(sections.subList(i + 1, sections.size()));
-					result.addAll(bisect(section, activeBisect, result.toArray(new ModSet.Section[]{})));
-					return result;
-				}
+				modSet = testFixes(activeBisect);
+				if (modSet.isPresent()) return modSet.get();
 
-				result.add(section);
+				smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
 			}
-			var reproductionSet = new ArrayList<String>();
-			for (ModSet.Section section : result) {
-				reproductionSet.add(section.getListCopy().get(0));
-			}
-			activeBisect.issues.get(smallestIssueModSet.issueId).fix.reproductions.add(reproductionSet);
-			// TODO: Verify reproduction: Calculate Fixes: And
-			// TODO handle multiple issues and what to do when done
+
 			activeBisect.bisectSettings = null;
-			return new ArrayList<>();
+			return SectionList.fromSections(new ArrayList<>());
 		}
+	}
+
+	private static Optional<SectionList> debugIssueModSet(ModSet.Erroring issueModSet, ActiveBisectConfig activeBisect) {
+		var result = new ArrayList<ModSet.Section>();
+		var sections = issueModSet.sections();
+		for (int i = 0; i < sections.size(); i++) {
+			ModSet.Section section = sections.get(i);
+			if (section.size() != 1) {
+				result.addAll(sections.subList(i + 1, sections.size()));
+				result.addAll(bisect(section, activeBisect, result.toArray(new ModSet.Section[]{})));
+				return Optional.of(SectionList.fromSections(result));
+			}
+			result.add(section);
+		}
+
+		var reproductionSet = new ArrayList<String>();
+		for (ModSet.Section section : result) {
+			reproductionSet.add(section.getListCopy().get(0));
+		}
+		reproductionSet.sort(null);
+
+		activeBisect.issues.get(issueModSet.issueId).fix.reproductions.add(reproductionSet);
+		return Optional.empty();
+	}
+
+	private static Optional<SectionList> testFixes(ActiveBisectConfig activeBisect) {
+		for (int fixedIssueId : activeBisect.findFixedIssues()) {
+			Issue testedIssue = activeBisect.issues.get(fixedIssueId);
+			ArrayList<ArrayList<String>> reproductions = testedIssue.fix.reproductions;
+
+			List<ModSet> issueModSets = activeBisect.modSets.values().stream().filter(it->it instanceof ModSet.Erroring erroring && erroring.issueId == fixedIssueId).toList();
+			// All mod sets of the issue that are not contained by any other mod set with the issue
+			List<ModSet> largestIssueModSets = issueModSets.stream().filter(it->issueModSets.stream().noneMatch(other->other != it && other.modSet.containsAll(it.modSet))).toList();
+			var fixes = BisectUtils.mergeReproductions(reproductions);
+			System.out.println(Arrays.toString(fixes.toArray()));
+			for (var largestIssueModSet: largestIssueModSets) {
+				for (var fix: fixes) {
+					var fixedMods = new ArrayList<>(largestIssueModSet.modSet.stream().filter(it -> !fix.contains(it)).toList());
+					if (activeBisect.getModSet(fixedMods).isEmpty()) {
+						return Optional.of(SectionList.from(fixedMods));
+					}
+				}
+			}
+		}
+		return Optional.empty();
 	}
 
 	private static ArrayList<ModSet.Section> bisect(ModSet.Section parent, ActiveBisectConfig activeBisect, ModSet.Section... givenModSetSections) {
@@ -199,31 +238,15 @@ public class Bisect {
 		return modSet.isPresent() && modSet.get().isWorkingOrFixed(activeBisect);
 	}
 
-	private static void loadModSet(QuiltPluginContext context, List<ModSet.Section> mods, HashMap<String, Path> loadOptions) throws IOException {
-		mods.sort(Comparator.comparingInt(ModSet.Section::start));
-
-		var sectionIndices = new ArrayList<Integer>(mods.size());
-		sectionIndices.add(0);
-		var flatMapModIds = new ArrayList<String>();
-		for (ModSet.Section modSection : mods) {
-			sectionIndices.add(flatMapModIds.size() + modSection.size());
-			flatMapModIds.addAll(modSection.getListCopy());
-		}
-		sectionIndices.remove(sectionIndices.size() - 1);
-
-		loadModSet(context, flatMapModIds, sectionIndices, loadOptions);
-	}
-
 	/**
-	 * @param mods MUST BE SORTED if more than one section exists
-	 * @param sectionIndices must be empty or get(0) == 0
+	 * @param mods           MUST BE SORTED if more than one section exists
 	 */
-	public static void loadModSet(QuiltPluginContext context, List<String> mods, List<Integer> sectionIndices, HashMap<String, Path> loadOptions) throws IOException {
+	public static void loadModSet(QuiltPluginContext context, SectionList mods, HashMap<String, Path> loadOptions) throws IOException {
 		var inBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Quilt Bisect - Loaded"));
 		var outOfBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
 			"Quilt Bisect - Only loaded via dependency"));
 		for (Map.Entry<String, Path> modIdPathEntry : loadOptions.entrySet()) {
-			if (mods.contains(modIdPathEntry.getKey())) {
+			if (mods.modIds().contains(modIdPathEntry.getKey())) {
 				context.addFileToScan(
 					modIdPathEntry.getValue(),
 					inBisectTreeNode.addChild(QuiltLoaderText.of(modIdPathEntry.getValue().getFileName().toString())),
@@ -240,17 +263,17 @@ public class Bisect {
 			}
 		}
 
-		if (sectionIndices.size() == 1) {
+		if (mods.sectionIndices().size() == 1) {
 			// Sorting is safe under these conditions
-			mods.sort(null);
+			mods.modIds().sort(null);
 		} else {
 			// TODO Check that mods is sorted
 		}
 
-		Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", mods));
+		Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", mods.modIds()));
 		Files.writeString(
 			ActiveBisectConfig.configDirectory.resolve("sections.txt"),
-			sectionIndices.stream().map(Object::toString).collect(Collectors.joining("\n"))
+			mods.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
 		);
 	}
 }

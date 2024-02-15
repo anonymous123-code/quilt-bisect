@@ -5,12 +5,14 @@ import dev.lambdaurora.spruceui.screen.SpruceScreen;
 import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import dev.lambdaurora.spruceui.widget.text.SpruceTextAreaWidget;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import static java.lang.String.join;
 
@@ -28,15 +30,22 @@ public class BisectSummaryScreen extends SpruceScreen {
 		sb.append("List of Reproduction cases for Issues:\n");
 		int crashIndex = 1;
 		for (Issue issue : oldBisect.issues) {
-			if (issue instanceof Issue.CrashIssue) {
+			if (issue instanceof Issue.CrashIssue crashIssue) {
 				sb.append("  - Crash ").append(crashIndex).append(":").append("\n");
+				sb.append("    Error: ").append(crashIssue.stacktrace.split("\n", 2)[0]).append("\n");
+				crashIndex++;
 			} else if (issue instanceof Issue.LogIssue logIssue) {
 				sb.append("  - ").append(logIssue.name).append("\n");
 			} else if (issue instanceof Issue.UserIssue userIssue) {
 				sb.append("  - ").append(userIssue.name).append("\n");
 			}
+			sb.append("    Reproductions:\n");
 			for (ArrayList<String> reproduction : issue.fix.reproductions) {
-				sb.append("    - ").append(join(", ", reproduction)).append("\n");
+				sb.append("      - ").append(join(", ", reproduction)).append("\n");
+			}
+			sb.append("    Fixes:\n");
+			for (Set<String> fix: BisectUtils.mergeReproductions(issue.fix.reproductions)) {
+				sb.append("      - Remove all of ").append(join(", ", fix)).append("\n");
 			}
 		}
 

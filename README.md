@@ -11,7 +11,7 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
   - If everything is fine, click the `No Issue` button
   - If you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
     - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiples with previous fixes applied (todo: maybe remove this?)
-- (todo) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
+- (untested) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
 ## How does it work

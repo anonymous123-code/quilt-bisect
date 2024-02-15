@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -97,7 +95,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		} else {
 			var  options = Bisect.getModOptions();
 			// Safe because only one section exists
-			Bisect.loadModSet(context, new ArrayList<>(options.keySet()), List.of(0), options);
+			Bisect.loadModSet(context, SectionList.from(options.keySet()), options);
 		}
 		System.setProperty("quiltBisect.active", "true");
 	}
