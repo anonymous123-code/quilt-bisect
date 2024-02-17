@@ -130,24 +130,42 @@ public class Bisect {
 		} else {
 			// find the smallest mod set where an unsolved issue is present -> this is the mod set we're trying to debug
 			var modSet = testFixes(activeBisect);
-			if (modSet.isPresent()) return modSet.get();
+			if (modSet.isPresent()) {
+				return modSet.get();
+			}
 
 			ModSet.Erroring smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
 			while (smallestIssueModSet != null) {
 				modSet = debugIssueModSet(smallestIssueModSet, activeBisect);
-				if (modSet.isPresent()) return modSet.get();
+				if (modSet.isPresent()) {
+					return modSet.get();
+				}
 
 				modSet = testFixes(activeBisect);
-				if (modSet.isPresent()) return modSet.get();
+				if (modSet.isPresent()) {
+					return modSet.get();
+				}
 
 				smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
 			}
 
-			modSet = testAllFixes(activeBisect);
-			if (modSet.isPresent()) return modSet.get();
+			var fixes = BisectUtils.calculateFixes(activeBisect.issues.stream().map(issue -> issue.fix).toList());
+			modSet = testAllFixes(fixes, activeBisect);
+			if (modSet.isPresent()) {
+				return modSet.get();
+			}
+
+			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
+			ModSet largestModSet = activeBisect.modSets.values()
+													   .stream()
+													   .max(Comparator.comparingInt(modSet1 -> modSet1.modSet.size()))
+													   .orElse(new ModSet.Working(
+														   new ArrayList<>(),
+														   new ArrayList<>()
+													   ));
 
 			activeBisect.bisectSettings = null;
-			return SectionList.fromSections(new ArrayList<>());
+			return SectionList.from(largestModSet.modSet.stream().filter(it -> !smallestFix.contains(it)).toList());
 		}
 	}
 
@@ -179,14 +197,21 @@ public class Bisect {
 			Issue testedIssue = activeBisect.issues.get(fixedIssueId);
 			ArrayList<ArrayList<String>> reproductions = testedIssue.fix.reproductions;
 
-			List<ModSet> issueModSets = activeBisect.modSets.values().stream().filter(it->it instanceof ModSet.Erroring erroring && erroring.issueId == fixedIssueId).toList();
+			List<ModSet> issueModSets = activeBisect.modSets.values()
+															.stream()
+															.filter(it -> it instanceof ModSet.Erroring erroring && erroring.issueId == fixedIssueId)
+															.toList();
 			// All mod sets of the issue that are not contained by any other mod set with the issue
-			List<ModSet> largestIssueModSets = issueModSets.stream().filter(it->issueModSets.stream().noneMatch(other->other != it && other.modSet.containsAll(it.modSet))).toList();
+			List<ModSet> largestIssueModSets = issueModSets.stream().filter(it -> issueModSets.stream()
+																							  .noneMatch(other -> other != it && other.modSet.containsAll(
+																								  it.modSet))).toList();
 			var fixes = BisectUtils.mergeReproductions(reproductions);
 			System.out.println(Arrays.toString(fixes.toArray()));
-			for (var largestIssueModSet: largestIssueModSets) {
-				for (var fix: fixes) {
-					var fixedMods = new ArrayList<>(largestIssueModSet.modSet.stream().filter(it -> !fix.contains(it)).toList());
+			for (var largestIssueModSet : largestIssueModSets) {
+				for (var fix : fixes) {
+					var fixedMods = new ArrayList<>(largestIssueModSet.modSet.stream()
+																			 .filter(it -> !fix.contains(it))
+																			 .toList());
 					if (activeBisect.getModSet(fixedMods).isEmpty()) {
 						return Optional.of(SectionList.from(fixedMods));
 					}
@@ -196,9 +221,14 @@ public class Bisect {
 		return Optional.empty();
 	}
 
-	private static Optional<SectionList> testAllFixes(ActiveBisectConfig activeBisectConfig) {
-		var fixes = BisectUtils.calculateFixes(activeBisectConfig.issues.stream().map(issue -> issue.fix).toList());
-		List<ModSet> largestModSets = activeBisectConfig.modSets.values().stream().filter(it->activeBisectConfig.modSets.values().stream().noneMatch(other->other != it && other.modSet.containsAll(it.modSet))).toList();
+	private static Optional<SectionList> testAllFixes(Set<Set<String>> fixes, ActiveBisectConfig activeBisectConfig) {
+		List<ModSet> largestModSets = activeBisectConfig.modSets.values()
+																.stream()
+																.filter(it -> activeBisectConfig.modSets.values()
+																										.stream()
+																										.noneMatch(other -> other != it && other.modSet.containsAll(
+																											it.modSet)))
+																.toList();
 		for (ModSet largestModSet : largestModSets) {
 			for (Set<String> fix : fixes) {
 				var fixedMods = new ArrayList<>(largestModSet.modSet.stream().filter(it -> !fix.contains(it)).toList());
@@ -256,7 +286,7 @@ public class Bisect {
 	}
 
 	/**
-	 * @param mods           MUST BE SORTED if more than one section exists
+	 * @param mods MUST BE SORTED if more than one section exists
 	 */
 	public static void loadModSet(QuiltPluginContext context, SectionList mods, HashMap<String, Path> loadOptions) throws IOException {
 		var inBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Quilt Bisect - Loaded"));

@@ -1,6 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import org.quiltmc.loader.api.LoaderValue;
 import org.quiltmc.loader.api.QuiltLoader;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
@@ -12,8 +13,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 
 public class BisectPlugin implements QuiltLoaderPlugin {
@@ -94,8 +97,10 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			Bisect.childBisect(context);
 		} else {
 			var  options = Bisect.getModOptions();
+			var fixes = BisectUtils.calculateFixes(activeConfig.issues.stream().map(issue -> issue.fix).toList());
+			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
 			// Safe because only one section exists
-			Bisect.loadModSet(context, SectionList.from(options.keySet()), options);
+			Bisect.loadModSet(context, SectionList.from(options.keySet().stream().filter(it -> !smallestFix.contains(it)).toList()), options);
 		}
 		System.setProperty("quiltBisect.active", "true");
 	}

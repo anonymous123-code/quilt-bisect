@@ -23,7 +23,7 @@ public record SectionList(List<String> modIds, List<Integer> sectionIndices) {
 		return new SectionList(flatMapModIds, sectionIndices);
 	}
 
-	public static SectionList from(List<String> mods) {
+	public static SectionList from(ArrayList<String> mods) {
 		return new SectionList(mods, List.of(0));
 	}
 

@@ -14,12 +14,16 @@ import java.util.regex.Pattern;
 
 public class BisectUtils {
 
-	public static final Pattern CLIENT_MOD_TABLE_REGEX = Pattern.compile("Quilt Mods: *\\n[^\\n]*\\n[ \\t]*[|\\-:]*\\n((?:[^\\n]*\\n)*[^\\n]*)\\n.*\\n[ \\t]*Mod Table Version");
-	public static final Pattern QUILT_MOD_TABLE_REGEX = Pattern.compile("-- Mods --\\n.*\\n.*\\n[ \\t]*[|\\-:]*\\n((?:.*\\n)*.*)\\n[^\\n]*\\n[ \\t]*Mod Table Version");
-	public static final Pattern MOD_ID_AND_FILE_NAME_REGEX = Pattern.compile("\\|[^|]*\\|[^|]*\\| *([a-zA-Z0-9_-]+) *\\|(?:.*\\|)*(?:[^|/]*/)*([^|/\\\\ ]+) *\\|[^|]*\\|$");
+	public static final Pattern CLIENT_MOD_TABLE_REGEX = Pattern.compile(
+		"Quilt Mods: *\\n[^\\n]*\\n[ \\t]*[|\\-:]*\\n((?:[^\\n]*\\n)*[^\\n]*)\\n.*\\n[ \\t]*Mod Table Version");
+	public static final Pattern QUILT_MOD_TABLE_REGEX = Pattern.compile(
+		"-- Mods --\\n.*\\n.*\\n[ \\t]*[|\\-:]*\\n((?:.*\\n)*.*)\\n[^\\n]*\\n[ \\t]*Mod Table Version");
+	public static final Pattern MOD_ID_AND_FILE_NAME_REGEX = Pattern.compile(
+		"\\|[^|]*\\|[^|]*\\| *([a-zA-Z0-9_-]+) *\\|(?:.*\\|)*(?:[^|/]*/)*([^|/\\\\ ]+) *\\|[^|]*\\|$");
 
 	public static String extractStackTrace(String crashLog) {
-		Pattern r = Pattern.compile("Description:.*\n\n((?:.+\n)*)\n\nA detailed walkthrough of the error, its code path and all known details is as follows");
+		Pattern r = Pattern.compile(
+			"Description:.*\n\n((?:.+\n)*)\n\nA detailed walkthrough of the error, its code path and all known details is as follows");
 		var matcher = r.matcher(crashLog);
 		if (matcher.find()) {
 			return matcher.group(1);
@@ -116,12 +120,18 @@ public class BisectUtils {
 	}
 
 	public static Set<Set<String>> calculateFixes(List<Issue.Fix> fixes) {
-		if (fixes.size() == 1) {
+		if (fixes.isEmpty()) {
+			return new HashSet<>();
+		} else if (fixes.size() == 1) {
 			return mergeReproductions(fixes.get(0).reproductions);
 		}
 		var halfIndex = fixes.size() / 2;
-		return mergeFixes(calculateFixes(fixes.subList(0, halfIndex)), calculateFixes(fixes.subList(halfIndex, fixes.size())));
+		return mergeFixes(
+			calculateFixes(fixes.subList(0, halfIndex)),
+			calculateFixes(fixes.subList(halfIndex, fixes.size()))
+		);
 	}
 
-	public record Result(String autoJoinName, AutoTest.AutoJoinType autoJoinMode) {}
+	public record Result(String autoJoinName, AutoTest.AutoJoinType autoJoinMode) {
+	}
 }
