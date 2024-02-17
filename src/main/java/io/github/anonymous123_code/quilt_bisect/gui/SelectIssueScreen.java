@@ -25,7 +25,7 @@ public class SelectIssueScreen extends SpruceScreen {
 	private IssueList issueList;
 
 	public SelectIssueScreen(@Nullable Screen parent) {
-		super(Text.literal("Bisect: Select Issue"));
+		super(Text.translatable("gui.bisect.select_issue.screen"));
 		this.parent = parent;
 	}
 

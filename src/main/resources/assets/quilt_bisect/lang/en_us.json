@@ -7,6 +7,7 @@
   "gui.bisect.continue": "Continue Bisect",
   "gui.bisect.new_issue.screen": "Create New Issue",
   "gui.bisect.new_issue": "New Issue",
+  "gui.bisect.select_issue.screen": "Bisect: Select Issue",
   "gui.bisect.start.auto_join.none": "No auto join",
   "gui.bisect.start.auto_join.world": "Join world",
   "gui.bisect.start.auto_join.server": "Join server",
