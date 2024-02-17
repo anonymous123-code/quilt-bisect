@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+    <rect rx="32" width="256" height="256" fill="#1b112b"/>
+
+    <rect rx="8" x="40" y="40" width="32" height="176" fill="#9722ff"/>
+    <rect rx="8" x="88" y="40" width="32" height="88" fill="#dc29dd"/>
+    <rect rx="8" x="136" y="84" width="32" height="44" fill="#34f"/>
+    <rect rx="8" x="184" y="84" width="32" height="22" fill="#27a2fd"/>
+
+    <text x="86" y="210" fill="white" font-weight="bold" font-size="90" font-family="Segoe UI, Noto Sans, Helvetica, Arial, sans-serif">QB</text>
+</svg>
