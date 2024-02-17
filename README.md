@@ -10,11 +10,18 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
 - The game will automatically restart. Try to reproduce the issues you had before.
   - If everything is fine, click the `No Issue` button
   - If you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
-    - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiples with previous fixes applied (todo: maybe remove this?)
+    - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiple bisects with previous fixes applied. See [Bisecting multiple issues at once](#bisecting-multiple-issues-at-once)
 - (untested) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
 ## How does it work
+### Bisecting multiple issues at once
+While bisecting multiple issues works, there are a few assumptions bisect makes that are essential when multiple issues are present:
+- Only removing a mod can fix an issue, not adding one 
+  - A common example for this would be indium, which fixes compatibility issues between sodium and other mods, if it wouldn't be declared by the other mods involved
+- There is a constant priority order between issues 
+  - If a subset B of a mod set with issue A has an issue different from issue A, issue A won't occur on any subset of B. This means that issues (even if marked by the user) must always be tested for in the same order
+
 ### Automatically mark things as working
 When starting a new bisect, you can configure bisect to
 - automatically join a world, server, realm, or the last joined one (Note that realms rely on ids and not on names)

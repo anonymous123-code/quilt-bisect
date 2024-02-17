@@ -143,6 +143,9 @@ public class Bisect {
 				smallestIssueModSet = activeBisect.findSmallestUnfixedModSet();
 			}
 
+			modSet = testAllFixes(activeBisect);
+			if (modSet.isPresent()) return modSet.get();
+
 			activeBisect.bisectSettings = null;
 			return SectionList.fromSections(new ArrayList<>());
 		}
@@ -187,6 +190,20 @@ public class Bisect {
 					if (activeBisect.getModSet(fixedMods).isEmpty()) {
 						return Optional.of(SectionList.from(fixedMods));
 					}
+				}
+			}
+		}
+		return Optional.empty();
+	}
+
+	private static Optional<SectionList> testAllFixes(ActiveBisectConfig activeBisectConfig) {
+		var fixes = BisectUtils.calculateFixes(activeBisectConfig.issues.stream().map(issue -> issue.fix).toList());
+		List<ModSet> largestModSets = activeBisectConfig.modSets.values().stream().filter(it->activeBisectConfig.modSets.values().stream().noneMatch(other->other != it && other.modSet.containsAll(it.modSet))).toList();
+		for (ModSet largestModSet : largestModSets) {
+			for (Set<String> fix : fixes) {
+				var fixedMods = new ArrayList<>(largestModSet.modSet.stream().filter(it -> !fix.contains(it)).toList());
+				if (activeBisectConfig.getModSet(fixedMods).isEmpty()) {
+					return Optional.of(SectionList.from(fixedMods));
 				}
 			}
 		}

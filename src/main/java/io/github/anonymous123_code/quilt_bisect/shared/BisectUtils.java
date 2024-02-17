@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -112,6 +113,14 @@ public class BisectUtils {
 		}
 
 		return simplifiedFixes;
+	}
+
+	public static Set<Set<String>> calculateFixes(List<Issue.Fix> fixes) {
+		if (fixes.size() == 1) {
+			return mergeReproductions(fixes.get(0).reproductions);
+		}
+		var halfIndex = fixes.size() / 2;
+		return mergeFixes(calculateFixes(fixes.subList(0, halfIndex)), calculateFixes(fixes.subList(halfIndex, fixes.size())));
 	}
 
 	public record Result(String autoJoinName, AutoTest.AutoJoinType autoJoinMode) {}
