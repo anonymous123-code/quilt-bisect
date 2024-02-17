@@ -1,5 +1,7 @@
 {
   "gui.bisect.start": "Start Bisect",
+  "gui.bisect.no_issue": "No Issue",
+  "gui.bisect.manual_issue": "Manual Issue",
   "gui.bisect.issue_name": "Issue Name",
   "gui.bisect.start.screen": "Bisect: Start Bisect",
   "gui.bisect.continue": "Continue Bisect",

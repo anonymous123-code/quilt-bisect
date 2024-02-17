@@ -1,5 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect;
 
+import io.github.anonymous123_code.quilt_bisect.gui.BisectSummaryScreen;
+import io.github.anonymous123_code.quilt_bisect.gui.CreateIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
@@ -24,17 +26,41 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 	public static boolean firstTimeInAutoJoinScope = true;
 	public static long joinedTimestamp = -1;
 
+	public static void markAsWorkingAndShutdown() {
+		GracefulTerminator.gracefullyTerminate(56);
+	}
+
 	@Override
 	public void onInitialize(ModContainer mod) {
 		var bisectConfig = ActiveBisectConfig.getInstance();
 		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
-				screen.getButtons().add(ButtonWidget.builder(Text.of("No Issue"), buttonWidget -> markAsWorkingAndShutdown()).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH - 5, 0).build());
-				screen.getButtons().add(ButtonWidget.builder(Text.of("Manual Issue"), buttonWidget -> screen.getClient().setScreen(new SelectIssueScreen(screen))).position(screen.width / 2 + 5, 0).build());
+				if (!(screen instanceof BisectSummaryScreen || screen instanceof CreateIssueScreen || screen instanceof SelectIssueScreen || screen instanceof StartBisectScreen)) {
+					screen.getButtons().add(ButtonWidget.builder(
+						Text.translatable("gui.bisect.no_issue"),
+						buttonWidget -> markAsWorkingAndShutdown()
+					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH - 5, 0).build());
+					screen.getButtons().add(ButtonWidget.builder(
+						Text.translatable("gui.bisect.manual_issue"),
+						buttonWidget -> screen.getClient().setScreen(new SelectIssueScreen(screen))
+					).position(screen.width / 2 + 5, 0).build());
+				} else {
+					screen.getButtons().add(ButtonWidget.builder(
+						Text.translatable("gui.bisect.no_issue"),
+						buttonWidget -> markAsWorkingAndShutdown()
+					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build());
+				}
 			});
 			ClientTickEvents.START.register(this);
 		} else {
-			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> screen.getButtons().add(ButtonWidget.builder(Text.translatable("gui.bisect.start"), (w) -> screen.getClient().setScreen(new StartBisectScreen(screen))).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build()));
+			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
+				if (!(screen instanceof BisectSummaryScreen || screen instanceof CreateIssueScreen || screen instanceof SelectIssueScreen || screen instanceof StartBisectScreen)) {
+					screen.getButtons().add(ButtonWidget.builder(
+						Text.translatable("gui.bisect.start"),
+						(w) -> screen.getClient().setScreen(new StartBisectScreen(screen))
+					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build());
+				}
+			});
 		}
 	}
 
@@ -44,10 +70,6 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 			throw new RuntimeException("Failed to load loader plugin: Something went very long");
 		}
 		LOGGER.info("Successfully battled quilt loader demons, bisect is alive! Cursed stuff may happen, make sure to test the errors you found without bisect before reporting them. (Bisect can't include itself in search)");
-	}
-
-	public static void markAsWorkingAndShutdown() {
-		GracefulTerminator.gracefullyTerminate(56);
 	}
 
 	@Override
