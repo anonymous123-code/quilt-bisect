@@ -7,6 +7,7 @@ import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.CommonTexts;
@@ -95,6 +96,11 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
 		activeBisectConfig.issues.add(new Issue.UserIssue(issueNameWidget.getText()));
 		saveAndQuit();
+	}
+
+	@Override
+	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
 	}
 
 	@Override

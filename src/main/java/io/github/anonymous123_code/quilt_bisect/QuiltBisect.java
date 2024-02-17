@@ -48,7 +48,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 					screen.getButtons().add(ButtonWidget.builder(
 						Text.translatable("gui.bisect.no_issue"),
 						buttonWidget -> markAsWorkingAndShutdown()
-					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build());
+					).position(20, 10).build());
 				}
 			});
 			ClientTickEvents.START.register(this);

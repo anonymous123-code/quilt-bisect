@@ -73,6 +73,12 @@ public class SelectIssueScreen extends SpruceScreen {
 		this.client.setScreen(parent);
 	}
 
+
+	@Override
+	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
+	}
+
 	public class IssueList extends AlwaysSelectedEntryListWidget<IssueList.IssueEntry> {
 		public IssueList(MinecraftClient minecraftClient) {
 			super(minecraftClient, SelectIssueScreen.this.width, SelectIssueScreen.this.height, 32, SelectIssueScreen.this.height-64, 20);

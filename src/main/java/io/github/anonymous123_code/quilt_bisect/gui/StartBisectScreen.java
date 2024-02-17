@@ -11,6 +11,7 @@ import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
@@ -52,9 +53,9 @@ public class StartBisectScreen extends CreateIssueScreen {
 		activeBisectConfig.bisectSettings = new AutoTest(autoJoinMode.convertToAutoTest(),
 			autoJoinNameWidget.getText(),
 			autoJoinCommandInput.getText(),
-			autoJoinDisableWorldSavingWidget.isActive(),
+			autoJoinDisableWorldSavingWidget.getValue(),
 			autoJoinAutoAcceptTime,
-			autoJoinEnableAutoAcceptWidget.isActive()
+			autoJoinEnableAutoAcceptWidget.getValue()
 		);
 		saveAndQuit();
 	}
@@ -132,6 +133,11 @@ public class StartBisectScreen extends CreateIssueScreen {
 			Text.translatable("gui.bisect.start.command.input")
 		);
 		addDrawableChild(autoJoinCommandInput);
+	}
+
+	@Override
+	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
 	}
 
 
