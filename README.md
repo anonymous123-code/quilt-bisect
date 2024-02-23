@@ -82,5 +82,5 @@ While the code is ARR, this is only to prevent ports to other mod loaders or low
 ---
 
 `PluginLogger`, `MinecraftServerMixin` and `GracefulTerminator` were mostly taken from https://github.com/comp500/ModVote.
-`BisectPlugin` also contains large parts of `ModvotePlugin` from that repo.
+`BisectPluginProcessManager` also contains large parts of `ModvotePlugin` from that repo.
 All of these are under the [MIT license](Modvote-License) (by comp500)
