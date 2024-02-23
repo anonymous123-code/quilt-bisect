@@ -25,7 +25,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
 	public static void parentBisect(Optional<String> crashLog, Optional<String> crashLogPath) throws IOException, NoSuchAlgorithmException {
-		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
+		var config_dir = ActiveBisectConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
 		List<String> modSet = readModSet(modset_path);

@@ -35,7 +35,7 @@ When starting a new bisect, you can configure bisect to
 ### Handling crashes
 Being a loader plugin, bisect hooks into the Quilt's loader process at an incredibly early stage.
 There, it can create a new process that is actually running the game, and wait for that process to end.
-After that bisect checks if minecraft crashed by searching for a new crash log, copies the latest.log, and updates `config/bisect/active_bisect.json`.
+After that bisect checks if minecraft crashed by searching for a new crash log, copies the latest.log, and updates `config/quilt_bisect/active_bisect.json`.
 (if no bisect is active and it crashed it asks if a new one should be started)
 If minecraft didn't quit normally (either through a crash or through the bisect menu) and a bisect is active, the parent process will restart the game.
 [Behind the scenes](src/main/java/io/github/anonymous123_code/quilt_bisect/plugin/BisectPluginProcessManager.java) there is a lot more stuff going on making sure that for example killing the parent or child process makes them  behave as expected.
