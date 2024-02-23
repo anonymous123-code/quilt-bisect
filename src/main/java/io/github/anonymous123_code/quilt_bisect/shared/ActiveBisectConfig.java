@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class ActiveBisectConfig {
-	public static final Path configDirectory = QuiltLoader.getConfigDir().resolve("bisect");
+	public static final Path configDirectory = QuiltLoader.getConfigDir().resolve("quilt_bisect");
 	private static ActiveBisectConfig INSTANCE = create();
 
 	public static ActiveBisectConfig getInstance() {
@@ -51,8 +51,7 @@ public class ActiveBisectConfig {
 
 	public void safe(boolean force) throws IOException {
 		if (!force && !isUpToDate()) return;
-		var config_dir = QuiltLoader.getConfigDir().resolve("bisect");
-		var config_file = config_dir.resolve("active_bisect.json");
+		var config_file = configDirectory.resolve("active_bisect.json");
 		var gson = new GsonBuilder().setPrettyPrinting().create();
 		Files.writeString(config_file, gson.toJson(this));
 	}
