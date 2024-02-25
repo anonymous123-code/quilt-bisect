@@ -36,7 +36,7 @@
 				"versions": ">=1.20"
 			},
 			{
-				"id": "spruce_ui",
+				"id": "spruceui",
 				"versions": ">=5.0.0"
 			}
 		]
