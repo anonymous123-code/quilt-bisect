@@ -45,6 +45,7 @@
 		"class": "io.github.anonymous123_code.quilt_bisect.plugin.BisectPlugin",
 		"packages":[
 			"io.github.anonymous123_code.quilt_bisect.plugin",
+			"io.github.anonymous123_code.quilt_bisect.plugin.gui",
 			"io.github.anonymous123_code.quilt_bisect.shared"
 		]
 	},
