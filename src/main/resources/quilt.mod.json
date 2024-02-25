@@ -36,7 +36,7 @@
 				"versions": ">=1.20"
 			},
 			{
-				"id": "spruce_ui",
+				"id": "spruceui",
 				"versions": ">=5.0.0"
 			}
 		]
@@ -44,7 +44,9 @@
 	"experimental_quilt_loader_plugin": {
 		"class": "io.github.anonymous123_code.quilt_bisect.plugin.BisectPlugin",
 		"packages":[
-			"io.github.anonymous123_code.quilt_bisect.plugin"
+			"io.github.anonymous123_code.quilt_bisect.plugin",
+			"io.github.anonymous123_code.quilt_bisect.plugin.gui",
+			"io.github.anonymous123_code.quilt_bisect.shared"
 		]
 	},
 	"mixin": "quilt_bisect.mixins.json"
