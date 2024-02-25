@@ -32,7 +32,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 		for (Issue issue : oldBisect.issues) {
 			if (issue instanceof Issue.CrashIssue crashIssue) {
 				sb.append("  - Crash ").append(crashIndex).append(":").append("\n");
-				sb.append("    Error: ").append(crashIssue.stacktrace.split("\n", 2)[0]).append("\n");
+				sb.append("    Error: ").append(crashIssue.stacktraces.get(0).split("\n", 2)[0]).append("\n");
 				crashIndex++;
 			} else if (issue instanceof Issue.LogIssue logIssue) {
 				sb.append("  - ").append(logIssue.name).append("\n");

@@ -1,5 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
+import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import org.quiltmc.loader.api.LoaderValue;
@@ -39,7 +40,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			var crashLogFile = logFileManager.getNew();
 			if (config.isActive()) {
 				try {
-					Bisect.parentBisect(crashLogFile.isEmpty() ? Optional.empty() : Optional.of(Files.readString(crashLogFile.get())), crashLogFile.map(file -> file.getFileName().toString()));
+					Bisect.parentBisect(crashLogFile.isEmpty() ? null : Files.readString(crashLogFile.get()), crashLogFile.map(file -> file.getFileName().toString()).orElse(null));
 				} catch (IOException | NoSuchAlgorithmException e) {
 					throw new RuntimeException(e);
 				}
@@ -52,7 +53,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 						var active_bisect = ActiveBisectConfig.getInstance();
 						active_bisect.bisectSettings = BisectPluginUi.openDialog(exitCode.get(), crashLog);
 						if (active_bisect.isActive()) {
-							Bisect.parentBisect(Optional.of(crashLog), Optional.of(crashLogFile.get().getFileName().toString()));
+							Bisect.parentBisect(crashLog, crashLogFile.get().getFileName().toString());
 						} else {
 							System.exit(exitCode.get());
 						}

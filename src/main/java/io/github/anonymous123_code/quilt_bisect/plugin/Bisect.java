@@ -1,16 +1,19 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
+import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.ModMetadata;
 import org.quiltmc.loader.api.QuiltLoader;
 import org.quiltmc.loader.api.gui.QuiltLoaderText;
 import org.quiltmc.loader.api.plugin.QuiltPluginContext;
 import org.quiltmc.loader.impl.fabric.metadata.ParseMetadataException;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -24,7 +27,7 @@ import java.util.zip.ZipInputStream;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
-	public static void parentBisect(Optional<String> crashLog, Optional<String> crashLogPath) throws IOException, NoSuchAlgorithmException {
+	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException {
 		var config_dir = ActiveBisectConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
@@ -35,8 +38,65 @@ public class Bisect {
 		String modSetHash = generateModSetHash(modSet);
 		copyLatestLog(modSetHash);
 		var active_bisect = ActiveBisectConfig.getInstance();
-		active_bisect.processRun(modSet, sections, modSetHash, crashLog, crashLogPath);
+		processRun(modSet, sections, modSetHash, crashLog, crashLogPath, active_bisect);
 		active_bisect.safe(false);
+	}
+
+
+	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) {
+		Optional<Integer> issue = getOrAddIssue(crashLog, activeBisectConfig);
+		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(new ArrayList<>(modIdSet), issue.get(),
+			crashLogPath != null ? crashLogPath : "", new ArrayList<>(sections)
+		) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
+		activeBisectConfig.modSets.put(modSetHash, modSet);
+	}
+
+
+	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) {
+		var issuePath = ActiveBisectConfig.configDirectory.resolve("issue.txt");
+		if (Files.exists(issuePath)) {
+			String issueData;
+			try {
+				issueData = Files.readString(issuePath);
+				Files.delete(issuePath);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			return Optional.of(Integer.parseInt(issueData, 10));
+		} else if (crashLog != null) {
+			var stacktrace = removeStacktracePoison(BisectUtils.extractStackTrace(crashLog));
+			for (int issueIndex = 0; issueIndex < activeBisectConfig.issues.size(); issueIndex++) {
+				var issue = activeBisectConfig.issues.get(issueIndex);
+				if (issue instanceof Issue.CrashIssue crashIssue) {
+					for (var knownStacktrace : crashIssue.stacktraces) {
+						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
+						if (cleanKnownStacktrace.equals(stacktrace)) {
+							return Optional.of(issueIndex);
+						} else if (cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])) {
+							try {
+								if (BisectPluginUi.openDialog(cleanKnownStacktrace, stacktrace)) {
+									crashIssue.stacktraces.add(stacktrace);
+									return Optional.of(issueIndex);
+								}
+							} catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
+									 IllegalAccessException e) {
+								throw new RuntimeException(e);
+							}
+						}
+					}
+				}
+			}
+			activeBisectConfig.issues.add(new Issue.CrashIssue(stacktrace));
+			return Optional.of(activeBisectConfig.issues.size() - 1);
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	public static String removeStacktracePoison(String oldStacktrace) {
+		return oldStacktrace
+			.replaceAll(":\\d+\\)", ")") // Line numbers
+			.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
 	}
 
 	private static List<Integer> readSections(Path sectionsPath) throws IOException {

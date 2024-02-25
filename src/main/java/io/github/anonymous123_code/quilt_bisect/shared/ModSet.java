@@ -1,5 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.shared;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,7 +55,7 @@ public abstract class ModSet {
 		public final int issueId;
 		public final String crashLogPath;
 
-		public Erroring(ArrayList<String> modSet, int issueId, String crashLogPath, ArrayList<Integer> sections) {
+		public Erroring(ArrayList<String> modSet, int issueId, @NotNull String crashLogPath, ArrayList<Integer> sections) {
 			super(false, modSet, sections);
 			this.issueId = issueId;
 			this.crashLogPath = crashLogPath;

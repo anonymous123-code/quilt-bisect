@@ -1,4 +1,4 @@
-package io.github.anonymous123_code.quilt_bisect.plugin;
+package io.github.anonymous123_code.quilt_bisect.plugin.gui;
 
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;

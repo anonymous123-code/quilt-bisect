@@ -22,11 +22,12 @@ public abstract class Issue {
 	}
 
 	public static class CrashIssue extends Issue {
-		public final String stacktrace;
+		public final ArrayList<String> stacktraces;
 
-		CrashIssue(String stacktrace) {
+		public CrashIssue(String stacktrace) {
 			super(Type.CRASH);
-			this.stacktrace = stacktrace;
+			this.stacktraces = new ArrayList<>();
+			this.stacktraces.add(stacktrace);
 		}
 	}
 

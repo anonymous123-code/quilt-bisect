@@ -95,12 +95,6 @@ public class ActiveBisectConfig {
 	public final HashMap<String, String> modIdToFile = new HashMap<>();
 
 
-	public void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, Optional<String> crashLog, Optional<String> crashLogPath) {
-		Optional<Integer> issue = getOrAddIssue(crashLog);
-		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(new ArrayList<>(modIdSet), issue.get(), crashLogPath.orElse(""), new ArrayList<>(sections)) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
-		modSets.put(modSetHash, modSet);
-	}
-
 	public void updateFiles(HashMap<String, Path> modSetToPath) {
 		for (var entry : modSetToPath.entrySet()) {
 			var fileName = entry.getValue().getFileName().toString();
@@ -115,36 +109,6 @@ public class ActiveBisectConfig {
 				modIdToFile.put(entry.getKey(), fileName);
 			}
 		}
-	}
-
-	public Optional<Integer> getOrAddIssue(Optional<String> crashLog) {
-		var issuePath = configDirectory.resolve("issue.txt");
-		if (Files.exists(issuePath)) {
-			String issueData;
-			try {
-				issueData = Files.readString(issuePath);
-				Files.delete(issuePath);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-			return Optional.of(Integer.parseInt(issueData, 10));
-		} else if (crashLog.isPresent()){
-			var stacktrace = removeStacktracePoison(BisectUtils.extractStackTrace(crashLog.get()));
-			for (int issueIndex = 0; issueIndex < issues.size(); issueIndex++) {
-				var issue = issues.get(issueIndex);
-				if (issue instanceof Issue.CrashIssue && removeStacktracePoison(((Issue.CrashIssue) issue).stacktrace).equals(stacktrace)) {
-					return Optional.of(issueIndex);
-				}
-			}
-			issues.add(new Issue.CrashIssue(stacktrace));
-			return Optional.of(issues.size() - 1);
-		} else return Optional.empty();
-	}
-
-	public String removeStacktracePoison(String oldStacktrace) {
-		return oldStacktrace
-			.replaceAll(":\\d+\\)", ")") // Line numbers
-			.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
 	}
 
 	public Optional<ModSet> getFirstInvalidatedModSet() {
