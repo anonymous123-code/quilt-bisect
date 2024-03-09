@@ -72,7 +72,16 @@ public class Bisect {
 						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
 						if (cleanKnownStacktrace.equals(stacktrace)) {
 							return Optional.of(issueIndex);
-						} else if (cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])) {
+						}
+					}
+				}
+			}
+			for (int issueIndex = 0; issueIndex < activeBisectConfig.issues.size(); issueIndex++) {
+				var issue = activeBisectConfig.issues.get(issueIndex);
+				if (issue instanceof Issue.CrashIssue crashIssue) {
+					for (var knownStacktrace : crashIssue.stacktraces) {
+						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
+						if (cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])) {
 							try {
 								if (BisectPluginUi.openDialog(cleanKnownStacktrace, stacktrace)) {
 									crashIssue.stacktraces.add(stacktrace);
