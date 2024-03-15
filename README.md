@@ -29,8 +29,9 @@ When starting a new bisect, you can configure bisect to
   - The time is in 1/20 seconds, and will start on world join if auto join is active, else when the title screen shows. If in single player, it will also wait for enough ticks to pass
 - automatically run commands or sending chat messages after auto joining.
   - It will be treated as if you sent them from chat, and also work with client side commands
-- disable world saving (TODO)
+- disable world saving
   - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active
+  - For maximum compatibility it is currently implemented by making a backup of the worlds folder and resetting the worlds that have been backed up to the stored state before launch if active
 
 ### Handling crashes
 Being a loader plugin, bisect hooks into the Quilt's loader process at an incredibly early stage.

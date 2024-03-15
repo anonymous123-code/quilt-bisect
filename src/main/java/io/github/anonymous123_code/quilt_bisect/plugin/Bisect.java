@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipInputStream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -149,7 +150,48 @@ public class Bisect {
 		HashMap<String, Path> loadOptions = getModOptions();
 		activeBisect.updateFiles(loadOptions);
 		loadModSet(context, calculateModSet(activeBisect), loadOptions);
+		if (activeBisect.bisectSettings != null && activeBisect.bisectSettings.disableWorldSaving()) {
+			Path worldStorageLocation = Path.of("saves");
+			Path backupStorageLocation = Path.of("bisectSavesBackup");
+
+			if (Files.exists(backupStorageLocation)) {
+				if (Files.isDirectory(backupStorageLocation)) {
+					// For every dir in backup:
+					try (Stream<Path> path = Files.list(backupStorageLocation)) {
+						for (var file : path.toList()) {
+							// Delete the corresponding world
+							deleteDirectory(worldStorageLocation.resolve(file.getFileName()));
+						}
+					}
+					copyDirectory(backupStorageLocation, worldStorageLocation);
+				} else {
+					throw new RuntimeException("save backup is not a directory");
+				}
+			}
+			copyDirectory(worldStorageLocation, backupStorageLocation);
+		}
 		activeBisect.safe(false);
+	}
+
+	public static void deleteDirectory(Path dir) throws IOException {
+		if (Files.exists(dir)) {
+			try (Stream<Path> pathStream = Files.walk(dir)) {
+				for (Path path : (Iterable<? extends Path>) pathStream.sorted(Comparator.reverseOrder())::iterator) {
+					Files.deleteIfExists(path);
+				}
+			}
+		}
+	}
+
+	public static void copyDirectory(Path from, Path to) throws IOException {
+		try (Stream<Path> paths = Files.walk(from)) {
+			for (Path source : (Iterable<? extends Path>) paths::iterator) {
+				Path destination = to.resolve(from.relativize(source));
+				if (!Files.exists(destination)) {
+					Files.copy(source, destination);
+				}
+			}
+		}
 	}
 
 	public static HashMap<String, Path> getModOptions() throws IOException, ParseMetadataException {
