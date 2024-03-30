@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonParseException;
 import org.quiltmc.loader.api.QuiltLoader;
+import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,18 +96,18 @@ public class ActiveBisectConfig {
 	public final HashMap<String, String> modIdToFile = new HashMap<>();
 
 
-	public void updateFiles(HashMap<String, Path> modSetToPath) {
-		for (var entry : modSetToPath.entrySet()) {
-			var fileName = entry.getValue().getFileName().toString();
-			if (modIdToFile.containsKey(entry.getKey())) {
-				if (!modIdToFile.get(entry.getKey()).equals(fileName)) {
+	public void updateLoadOptions(List<ModLoadOption> loadOptions) {
+		for (ModLoadOption loadOption : loadOptions) {
+			var fileName = loadOption.from().getFileName().toString(); // TODO Figure out how to get the hash. For now use the file name
+			if (modIdToFile.containsKey(loadOption.id())) {
+				if (!modIdToFile.get(loadOption.id()).equals(fileName)) {
 					for (var modSet: modSets.values()) {
-						if (modSet.modSet.contains(entry.getKey())) modSet.invalidated = true;
+						if (modSet.modSet.contains(loadOption.id())) modSet.invalidated = true;
 					}
-					modIdToFile.put(entry.getKey(), fileName);
+					modIdToFile.put(loadOption.id(), fileName);
 				}
 			} else {
-				modIdToFile.put(entry.getKey(), fileName);
+				modIdToFile.put(loadOption.id(), fileName);
 			}
 		}
 	}

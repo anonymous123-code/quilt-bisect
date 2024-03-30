@@ -5,7 +5,7 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
 ## Usage
 
 - This project uses Loader Plugins, `-Dloader.experimental.allow_loading_plugins=true` needs to be added to your JVM arguments.
-- Move the mods you want to test into a directory called `modsToBisect` in your minecraft folder
+- Put this mod into your mods folder
 - If your game crashes, a dialog will open asking if you want to bisect, else click the start bisect button at the top of your screen, and you will be prompted to give your issue a name. 
 - The game will automatically restart. Try to reproduce the issues you had before.
   - If everything is fine, click the `No Issue` button
@@ -30,7 +30,7 @@ When starting a new bisect, you can configure bisect to
 - automatically run commands or sending chat messages after auto joining.
   - It will be treated as if you sent them from chat, and also work with client side commands
 - disable world saving
-  - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active
+  - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active. It also allows for testing content mods
   - For maximum compatibility it is currently implemented by making a backup of the worlds folder and resetting the worlds that have been backed up to the stored state before launch if active
 
 ### Handling crashes
@@ -66,7 +66,7 @@ Ideally, a bisect method would be aware of dependencies and bisect based on thos
 However, this would immensely inflate the complexity of the algorithm, and this project is complex enough right now.
 
 Instead, Quilt Bisect simply ignores dependency in its search algorithm and provides all mods to quilt loader.
-However, it only force-loads mods in the mod set (this is what happens to mods in your mods folder) and provides the other mods as optional mods which are loaded when a dependency requires it.
+However, it only force-loads mods in the mod set (this is what happens to mods in your mods folder) and provides the other mods as optional mods which are only loaded when a dependency requires it.
 While solving the dependency issue, it has a few implications:
 - If required, a mod not in the mod set still can be loaded
 - This means that it can happen that when bisect identifies a minimal reproduction, that reproduction set actually only includes a mod which depends on the real culprit

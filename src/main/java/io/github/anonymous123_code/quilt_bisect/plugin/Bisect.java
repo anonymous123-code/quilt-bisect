@@ -7,23 +7,15 @@ import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.loader.api.ModMetadata;
-import org.quiltmc.loader.api.QuiltLoader;
-import org.quiltmc.loader.api.gui.QuiltLoaderText;
-import org.quiltmc.loader.api.plugin.QuiltPluginContext;
-import org.quiltmc.loader.impl.fabric.metadata.ParseMetadataException;
+import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipInputStream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -145,11 +137,9 @@ public class Bisect {
 		}
 	}
 
-	public static void childBisect(QuiltPluginContext context) throws IOException, ParseMetadataException {
+	public static SectionList childBisect(List<ModLoadOption> loadOptions) throws IOException {
 		var activeBisect = ActiveBisectConfig.getInstance();
-		HashMap<String, Path> loadOptions = getModOptions();
-		activeBisect.updateFiles(loadOptions);
-		loadModSet(context, calculateModSet(activeBisect), loadOptions);
+		activeBisect.updateLoadOptions(loadOptions);
 		if (activeBisect.bisectSettings != null && activeBisect.bisectSettings.disableWorldSaving()) {
 			Path worldStorageLocation = Path.of("saves");
 			Path backupStorageLocation = Path.of("bisectSavesBackup");
@@ -171,6 +161,7 @@ public class Bisect {
 			copyDirectory(worldStorageLocation, backupStorageLocation);
 		}
 		activeBisect.safe(false);
+		return calculateModSet(activeBisect);
 	}
 
 	public static void deleteDirectory(Path dir) throws IOException {
@@ -191,46 +182,6 @@ public class Bisect {
 					Files.copy(source, destination);
 				}
 			}
-		}
-	}
-
-	public static HashMap<String, Path> getModOptions() throws IOException, ParseMetadataException {
-		try (var files = Files.list(Path.of("modsToBisect"))) {
-			var result = new HashMap<String, Path>();
-			for (Iterator<Path> it = files.iterator(); it.hasNext(); ) {
-				Path file = it.next();
-				if (!Files.isRegularFile(file)) {
-					continue;
-				}
-				result.put(extractModId(file), file);
-			}
-			return result;
-		}
-	}
-
-	@SuppressWarnings("RedundantThrows") // Thrown in method invoked via reflection
-	private static String extractModId(Path it) throws IOException, ParseMetadataException {
-		try (var zip = new ZipInputStream(Files.newInputStream(it))) {
-			for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-				// I dont want to impl the mod id extraction by myself, so I'll let Quilt Loader internals do their job
-				if (entry.getName().equals("fabric.mod.json")) {
-					return ((net.fabricmc.loader.api.metadata.ModMetadata) QuiltLoader.class.getClassLoader().loadClass(
-						"org.quiltmc.loader.impl.fabric.metadata.FabricModMetadataReader").getMethod(
-						"parseMetadata",
-						InputStream.class
-					).invoke(null, zip)).getId();
-				} else if (entry.getName().equals("quilt.mod.json")) {
-					return ((ModMetadata) QuiltLoader.class.getClassLoader()
-														   .loadClass(
-															   "org.quiltmc.loader.impl.metadata.qmj.ModMetadataReader")
-														   .getMethod("read", InputStream.class)
-														   .invoke(null, zip)).id();
-				}
-			}
-			throw new RuntimeException("Unknown mod type: " + it.getFileName());
-		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-				 InvocationTargetException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -394,44 +345,5 @@ public class Bisect {
 
 	private static boolean modSetExistsAndIsWorkingOrFixed(Optional<ModSet> modSet, ActiveBisectConfig activeBisect) {
 		return modSet.isPresent() && modSet.get().isWorkingOrFixed(activeBisect);
-	}
-
-	/**
-	 * @param mods MUST BE SORTED if more than one section exists
-	 */
-	public static void loadModSet(QuiltPluginContext context, SectionList mods, HashMap<String, Path> loadOptions) throws IOException {
-		var inBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Quilt Bisect - Loaded"));
-		var outOfBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
-			"Quilt Bisect - Only loaded via dependency"));
-		for (Map.Entry<String, Path> modIdPathEntry : loadOptions.entrySet()) {
-			if (mods.modIds().contains(modIdPathEntry.getKey())) {
-				context.addFileToScan(
-					modIdPathEntry.getValue(),
-					inBisectTreeNode.addChild(QuiltLoaderText.of(modIdPathEntry.getValue().getFileName().toString())),
-					true
-				);
-			} else {
-				context.addFileToScan(
-					modIdPathEntry.getValue(),
-					outOfBisectTreeNode.addChild(QuiltLoaderText.of(modIdPathEntry.getValue()
-																				  .getFileName()
-																				  .toString())),
-					false
-				);
-			}
-		}
-
-		if (mods.sectionIndices().size() == 1) {
-			// Sorting is safe under these conditions
-			mods.modIds().sort(null);
-		} else {
-			// TODO Check that mods is sorted
-		}
-
-		Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", mods.modIds()));
-		Files.writeString(
-			ActiveBisectConfig.configDirectory.resolve("sections.txt"),
-			mods.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
-		);
 	}
 }
