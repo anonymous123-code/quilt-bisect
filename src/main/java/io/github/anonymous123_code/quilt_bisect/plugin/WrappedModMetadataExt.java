@@ -6,21 +6,25 @@ import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.*;
 import org.quiltmc.loader.api.plugin.ModMetadataExt;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
 public class WrappedModMetadataExt implements ModMetadataExt {
 	private final ModMetadataExt inner;
 	private final ModLoadType loadType;
+	private final ArrayList<ModDependency> dependentsOverride = new ArrayList<>();
 
 	public WrappedModMetadataExt(ModMetadataExt inner) {
 		this.inner = inner;
 		this.loadType = null;
+		this.dependentsOverride.addAll(inner.depends());
 	}
 
 	public WrappedModMetadataExt(ModMetadataExt inner, ModLoadType loadType) {
 		this.inner = inner;
 		this.loadType = loadType;
+		this.dependentsOverride.addAll(inner.depends());
 	}
 
 	@Override
@@ -118,8 +122,8 @@ public class WrappedModMetadataExt implements ModMetadataExt {
 	}
 
 	@Override
-	public Collection<ModDependency> depends() {
-		return inner.depends();
+	public ArrayList<ModDependency> depends() {
+		return dependentsOverride;
 	}
 
 	@Override

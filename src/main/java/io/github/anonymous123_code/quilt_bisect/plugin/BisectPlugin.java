@@ -3,8 +3,12 @@ package io.github.anonymous123_code.quilt_bisect.plugin;
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.LoaderValue;
+import org.quiltmc.loader.api.ModDependency;
+import org.quiltmc.loader.api.ModDependencyIdentifier;
 import org.quiltmc.loader.api.QuiltLoader;
+import org.quiltmc.loader.api.VersionRange;
 import org.quiltmc.loader.api.gui.QuiltLoaderText;
 import org.quiltmc.loader.api.plugin.ModMetadataExt;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
@@ -104,7 +108,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		for (String modId : context.manager().getModIds()) {
 			allLoadOptions.addAll(context.manager().getAllMods(modId));
 			switch (modId) {
-				case "quilt_bisect", "minecraft", "java", "quilt_loader", "" -> LOGGER.info("Skipping mod id " + modId);
+				case "quilt_bisect", "minecraft", "java", "quilt_loader", "modmenu" -> LOGGER.info("Skipping mod id " + modId);
 				default -> {
 					for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
 						if (loadOption instanceof ProvidedModOption) continue;
@@ -114,32 +118,54 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 				}
 			}
 		}
-		LOGGER.info("Discovering JiJ");
-		// FIXME: Proper JiJ Analysis. Must set the dependency of the parent mod if it is made optional
+		LOGGER.info("Analyzing JiJ");
 		Map<ModLoadOption, ArrayList<ModLoadOption>> jij = new HashMap<>();
+		Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap = new HashMap<>();
+		for (ModLoadOption loadOption : allLoadOptions) {
+			treeNodeModLoadOptionMap.put(context.manager().getGuiNode(loadOption), loadOption);
+		}
+		ArrayList<ModLoadOption> modSet = new ArrayList<>();
 		for (ModLoadOption loadOption : loadOptions) {
-			if (loadOption.isMandatory()) {
-				jij.put(loadOption, new ArrayList<>());
+			jij.putIfAbsent(loadOption, new ArrayList<>());
+			if (!loadOption.isMandatory()) { // Assume the mod was JiJed
+				var parent = context.manager().getGuiNode(loadOption).parent();
+				boolean notFound = true;
+				while (parent != null) {
+					var parentLoadOption = treeNodeModLoadOptionMap.get(parent);
+					if (parentLoadOption != null) {
+						jij.putIfAbsent(parentLoadOption, new ArrayList<>());
+						jij.get(parentLoadOption).add(loadOption);
+						notFound = false;
+						break;
+					} else {
+						parent = parent.parent();
+					}
+				}
+				if (notFound) {
+					LOGGER.warn("Containing mod not found for mod " + loadOption + ", assuming its a top-level mod.");
+					modSet.add(loadOption);
+				}
+			} else {
+				modSet.add(loadOption);
 			}
 		}
 
+		LOGGER.info("Calculating mod set");
 		ActiveBisectConfig.update();
 		var activeConfig = ActiveBisectConfig.getInstance();
 		SectionList sections;
 		if (activeConfig.isActive()) {
-			LOGGER.info("Calculating mod set");
 			try {
-				sections = Bisect.childBisect(jij.keySet().stream().toList());
+				sections = Bisect.childBisect(modSet);
 				ActiveBisectConfig.getInstance().safe(false);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		} else {
-			var options = jij.keySet();
 			var fixes = BisectUtils.calculateFixes(activeConfig.issues.stream().map(issue -> issue.fix).toList());
 			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
 			// Safe because only one section exists
-			sections = SectionList.from(options.stream().map(ModLoadOption::id).filter(it -> !smallestFix.contains(it)).toList());
+			sections = SectionList.from(modSet.stream().map(ModLoadOption::id).filter(it -> !smallestFix.contains(it)).toList());
 		}
 
 		if (sections.sectionIndices().size() == 1) {
@@ -151,11 +177,9 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 		LOGGER.info("Modifying mods...");
 		PluginGuiTreeNode node = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Made Optional by Quilt Bisect - should appear somewhere else as well"));
-		for (ModLoadOption loadOption : loadOptions) {
+		for (ModLoadOption loadOption : modSet) {
 			if (!sections.modIds().contains(loadOption.id())) {
-				context.ruleContext().removeOption(loadOption);
-				context.manager().getGuiNode(loadOption).addChild(QuiltLoaderText.of("Made optional by Quilt Bisect, see below"));
-				context.addModLoadOption(new WrappedModLoadOption(loadOption, false, ModMetadataExt.ModLoadType.IF_REQUIRED), node.addChild(QuiltLoaderText.of(loadOption.id())));
+				makeOptional(jij, loadOption, node);
 			}
 		}
 
@@ -168,6 +192,59 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void makeOptional(Map<ModLoadOption, ArrayList<ModLoadOption>> jij, ModLoadOption loadOption, PluginGuiTreeNode node) {
+		var modNode = node.addChild(QuiltLoaderText.of(loadOption.id()));
+		ArrayList<ModDependencyIdentifier> dependedIds = new ArrayList<>();
+		for (ModLoadOption nestedLoadOption : jij.get(loadOption)) {
+			if (nestedLoadOption.metadata().loadType() != ModMetadataExt.ModLoadType.IF_REQUIRED) {
+				dependedIds.add(ModDependencyIdentifier.of(nestedLoadOption.group(), nestedLoadOption.id()));
+				makeOptional(jij, nestedLoadOption, modNode);
+			}
+		}
+		context.ruleContext().removeOption(loadOption);
+		context.manager().getGuiNode(loadOption).addChild(QuiltLoaderText.of("Made optional by Quilt Bisect, see below"));
+		var newLoadOption = new WrappedModLoadOption(loadOption, false, ModMetadataExt.ModLoadType.IF_REQUIRED);
+		for (ModDependencyIdentifier id : dependedIds) {
+			newLoadOption.metadata().depends().add(new ModDependency.Only() {
+				@Override
+				public boolean shouldIgnore() {
+					return false;
+				}
+
+				@Override
+				public ModDependencyIdentifier id() {
+					return id;
+				}
+
+				@Override
+				public VersionRange versionRange() {
+					return VersionRange.ANY;
+				}
+
+				@Override
+				public String reason() {
+					return "Quilt Bisect: Automatically generated because a mod with that data was embedded";
+				}
+
+				@Override
+				public @Nullable ModDependency unless() {
+					return null;
+				}
+
+				@Override
+				public boolean optional() {
+					return false;
+				}
+			});
+		}
+		context.addModLoadOption(newLoadOption, modNode);
+	}
+
+	@Override
+	public @Nullable Boolean isHigherPriorityThan(Path path, List<ModLoadOption> thisOptions, String otherPluginId, List<ModLoadOption> otherOptions) {
+		return true;
 	}
 
 	@Override

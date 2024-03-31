@@ -31,8 +31,13 @@ public class WrappedModLoadOption extends ModLoadOption {
 	}
 
 	@Override
-	public ModMetadataExt metadata() {
+	public WrappedModMetadataExt metadata() {
 		return new WrappedModMetadataExt(inner.metadata(), this.loadType);
+	}
+
+	@Override
+	public Path createTransformRoot() {
+		return inner.createTransformRoot();
 	}
 
 	@Override
