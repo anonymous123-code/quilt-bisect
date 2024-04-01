@@ -1,6 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin.gui;
 
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ public class BisectPluginUi {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 
-	public static @Nullable AutoTest openDialog(int exitCode, String crashLog) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+	public static @Nullable AutoTest openDialog(int exitCode, String crashLog) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException, StacktraceExtractionFailException {
 		init();
         return new BisectCrashPrompt("Minecraft crashed. Start bisect?", exitCode, crashLog).prompt();
 	}

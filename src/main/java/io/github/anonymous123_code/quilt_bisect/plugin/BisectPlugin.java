@@ -3,12 +3,9 @@ package io.github.anonymous123_code.quilt_bisect.plugin;
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.loader.api.LoaderValue;
-import org.quiltmc.loader.api.ModDependency;
-import org.quiltmc.loader.api.ModDependencyIdentifier;
-import org.quiltmc.loader.api.QuiltLoader;
-import org.quiltmc.loader.api.VersionRange;
+import org.quiltmc.loader.api.*;
 import org.quiltmc.loader.api.gui.QuiltLoaderText;
 import org.quiltmc.loader.api.plugin.ModMetadataExt;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
@@ -28,7 +25,7 @@ import java.util.stream.Collectors;
 
 public class BisectPlugin implements QuiltLoaderPlugin {
 	private static final PluginLogHandler LOGGER = PluginLogHandler.INSTANCE;
-	private final LogFileManager logFileManager = new LogFileManager(Path.of("crash-reports"));
+	private final LogFileManager logFileManager = new LogFileManager(Path.of("crash-reports")); // TODO Config
 	private final BisectPluginProcessManager processManager = new BisectPluginProcessManager();
 
 	private QuiltPluginContext context;
@@ -48,11 +45,28 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			var crashLogFile = logFileManager.getNew();
 			if (config.isActive()) {
 				try {
-					Bisect.parentBisect(crashLogFile.isEmpty() ? null : Files.readString(crashLogFile.get()), crashLogFile.map(file -> file.getFileName().toString()).orElse(null));
+					Bisect.parentBisect(
+						crashLogFile.isEmpty() ? null : Files.readString(crashLogFile.get()),
+						crashLogFile.map(file -> file.getFileName().toString()).orElse(null)
+					);
 				} catch (IOException | NoSuchAlgorithmException e) {
 					throw new RuntimeException(e);
+				} catch (InvalidCommunicationFileStateException e) {
+					context.reportError(QuiltLoaderText.of(e.titleText())).appendDescription(QuiltLoaderText.of(
+						"This is likely caused by an error in bisect itself or by another loader plugin."));
+					context.haltLoading();
+				} catch (StacktraceExtractionFailException e) {
+					var error = context.reportError(QuiltLoaderText.of("Bisect: Failed to extract stack trace from crash log."))
+									   .appendDescription(QuiltLoaderText.of("Please open an issue with the log attached"));
+					//noinspection OptionalGetWithoutIsPresent
+					error.addCopyFileToClipboardButton(
+						QuiltLoaderText.of("Copy crash log file"),
+						crashLogFile.get()
+					);
+					error.addOpenLinkButton(QuiltLoaderText.of("Create new issue"), "https://github.com/anonymous123-code/quilt-bisect/issues/new");
+					context.haltLoading();
 				}
-            } else {
+			} else {
 				if (crashLogFile.isEmpty()) {
 					System.exit(exitCode.get());
 				} else {
@@ -66,10 +80,23 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 							System.exit(exitCode.get());
 						}
 					} catch (UnsupportedLookAndFeelException | IOException | ClassNotFoundException |
-                             InstantiationException | IllegalAccessException | NoSuchAlgorithmException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+							 InstantiationException | IllegalAccessException | NoSuchAlgorithmException e) {
+						throw new RuntimeException(e);
+					} catch (InvalidCommunicationFileStateException e) {
+						context.reportError(QuiltLoaderText.of(e.titleText())).appendDescription(QuiltLoaderText.of(
+							"This is likely caused by an error in bisect itself or by another loader plugin."));
+						context.haltLoading();
+					} catch (StacktraceExtractionFailException e) {
+						var error = context.reportError(QuiltLoaderText.of("Bisect: Failed to extract stack trace from crash log."))
+							   .appendDescription(QuiltLoaderText.of("Please open an issue with the log attached"));
+						error.addCopyFileToClipboardButton(
+							QuiltLoaderText.of("Copy crash log file"),
+							crashLogFile.get()
+						);
+						error.addOpenLinkButton(QuiltLoaderText.of("Create new issue"), "https://github.com/anonymous123-code/quilt-bisect/issues/new");
+						context.haltLoading();
+					}
+				}
 			}
 			exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
 		}
@@ -80,15 +107,15 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	public void load(QuiltPluginContext context, Map<String, LoaderValue> previousData) {
 		this.context = context;
 		if (!"true".equals(System.getProperty("quiltBisect.forked"))) {
-            try {
-                runParent();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return;
+			try {
+				runParent();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			return;
 		}
 		runChild();
-    }
+	}
 
 	private void runChild() {
 		Optional<ProcessHandle> parentProcess = ProcessHandle.current().parent();
@@ -101,18 +128,20 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	}
 
 	@Override
-	public void beforeSolve() {
+	public void beforeSolve() { // TODO Split
 		LOGGER.info("Discovering mods...");
 		ArrayList<ModLoadOption> loadOptions = new ArrayList<>();
 		List<ModLoadOption> allLoadOptions = new ArrayList<>();
 		for (String modId : context.manager().getModIds()) {
 			allLoadOptions.addAll(context.manager().getAllMods(modId));
 			switch (modId) {
-				case "quilt_bisect", "minecraft", "java", "quilt_loader", "modmenu" -> LOGGER.info("Skipping mod id " + modId);
+				case "quilt_bisect", "minecraft", "java", "quilt_loader", "modmenu" ->
+					LOGGER.info("Skipping mod id " + modId); //TODO config
 				default -> {
 					for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
-						if (loadOption instanceof ProvidedModOption) continue;
-						LOGGER.info("Found mod " + loadOption.id() + " from " + loadOption.from());
+						if (loadOption instanceof ProvidedModOption) {
+							continue;
+						}
 						loadOptions.add(loadOption);
 					}
 				}
@@ -165,7 +194,10 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			var fixes = BisectUtils.calculateFixes(activeConfig.issues.stream().map(issue -> issue.fix).toList());
 			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
 			// Safe because only one section exists
-			sections = SectionList.from(modSet.stream().map(ModLoadOption::id).filter(it -> !smallestFix.contains(it)).toList());
+			sections = SectionList.from(modSet.stream()
+											  .map(ModLoadOption::id)
+											  .filter(it -> !smallestFix.contains(it))
+											  .toList());
 		}
 
 		if (sections.sectionIndices().size() == 1) {
@@ -176,7 +208,8 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		}
 
 		LOGGER.info("Modifying mods...");
-		PluginGuiTreeNode node = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Made Optional by Quilt Bisect - should appear somewhere else as well"));
+		PluginGuiTreeNode node = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
+			"Made Optional by Quilt Bisect - should appear somewhere else as well"));
 		for (ModLoadOption loadOption : modSet) {
 			if (!sections.modIds().contains(loadOption.id())) {
 				makeOptional(jij, loadOption, node);
@@ -184,13 +217,16 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		}
 
 		try {
-			Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", sections.modIds()));
+			Files.writeString(
+				ActiveBisectConfig.configDirectory.resolve("modSet.txt"),
+				String.join("\n", sections.modIds())
+			);
 			Files.writeString(
 				ActiveBisectConfig.configDirectory.resolve("sections.txt"),
 				sections.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
 			);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Failed to write mod set comms files", e);
 		}
 	}
 
@@ -204,10 +240,12 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			}
 		}
 		context.ruleContext().removeOption(loadOption);
-		context.manager().getGuiNode(loadOption).addChild(QuiltLoaderText.of("Made optional by Quilt Bisect, see below"));
+		context.manager()
+			   .getGuiNode(loadOption)
+			   .addChild(QuiltLoaderText.of("Made optional by Quilt Bisect, see below"));
 		var newLoadOption = new WrappedModLoadOption(loadOption, false, ModMetadataExt.ModLoadType.IF_REQUIRED);
 		for (ModDependencyIdentifier id : dependedIds) {
-			newLoadOption.metadata().depends().add(new ModDependency.Only() {
+			newLoadOption.metadata().depends().add(new ModDependency.Only() { // TODO Custom class?
 				@Override
 				public boolean shouldIgnore() {
 					return false;
@@ -249,6 +287,6 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	@Override
 	public void unload(Map<String, LoaderValue> data) {
-		LOGGER.info("nooooo :(");
+		LOGGER.warn("Quilt Bisect unloaded... Never tested this case, should just work tm");
 	}
 }

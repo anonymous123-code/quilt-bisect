@@ -86,7 +86,7 @@ public class ActiveBisectConfig {
 		try {
 			return gson.fromJson(Files.readString(configFile), ActiveBisectConfig.class);
 		} catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Unable to read active bisect config", e);
         }
     }
 

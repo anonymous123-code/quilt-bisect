@@ -24,7 +24,7 @@ public class MinecraftClientMixin {
         try {
             Files.writeString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.World + "\n" + worldId);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to write last join comm file", e);
         }
     }
 

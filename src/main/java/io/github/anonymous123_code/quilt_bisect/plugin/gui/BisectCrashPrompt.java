@@ -2,6 +2,7 @@ package io.github.anonymous123_code.quilt_bisect.plugin.gui;
 
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -26,7 +27,7 @@ public class BisectCrashPrompt extends JOptionPane {
 	private final JTextField autoAcceptInput;
 	private final String title;
 
-	public BisectCrashPrompt(String title, int exitCode, String crashLog) {
+	public BisectCrashPrompt(String title, int exitCode, String crashLog) throws StacktraceExtractionFailException {
 		super("", JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION, null, null, null);
 		this.title = title;
 
@@ -46,7 +47,7 @@ public class BisectCrashPrompt extends JOptionPane {
 		this.setComponentOrientation(getRootFrame().getComponentOrientation());
 	}
 
-	private static Component createStacktracePanel(String crashlog) {
+	private static Component createStacktracePanel(String crashlog) throws StacktraceExtractionFailException {
 		var panel = new JPanel();
 		panel.setLayout(new BorderLayout());
 		JLabel label = new JLabel("The stacktrace will be used to discern different errors");
@@ -103,7 +104,7 @@ public class BisectCrashPrompt extends JOptionPane {
         }
     }
 
-	private JPanel buildMessage(int exitCode, String crashLog) {
+	private JPanel buildMessage(int exitCode, String crashLog) throws StacktraceExtractionFailException {
 		var dialogInfo = new JPanel();
 		dialogInfo.setMinimumSize(new Dimension(600, 400));
 		dialogInfo.setPreferredSize(new Dimension(800, 600));

@@ -5,6 +5,7 @@ import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
+import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
@@ -20,7 +21,7 @@ import java.util.stream.Stream;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
-	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException {
+	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException, InvalidCommunicationFileStateException, StacktraceExtractionFailException {
 		var config_dir = ActiveBisectConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
@@ -36,7 +37,7 @@ public class Bisect {
 	}
 
 
-	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) {
+	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
 		Optional<Integer> issue = getOrAddIssue(crashLog, activeBisectConfig);
 		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(new ArrayList<>(modIdSet), issue.get(),
 			crashLogPath != null ? crashLogPath : "", new ArrayList<>(sections)
@@ -45,7 +46,7 @@ public class Bisect {
 	}
 
 
-	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) {
+	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
 		var issuePath = ActiveBisectConfig.configDirectory.resolve("issue.txt");
 		if (Files.exists(issuePath)) {
 			String issueData;
@@ -53,7 +54,7 @@ public class Bisect {
 				issueData = Files.readString(issuePath);
 				Files.delete(issuePath);
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				throw new RuntimeException("Failed to read issue comm file", e);
 			}
 			return Optional.of(Integer.parseInt(issueData, 10));
 		} else if (crashLog != null) {
@@ -82,7 +83,7 @@ public class Bisect {
 								}
 							} catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
 									 IllegalAccessException e) {
-								throw new RuntimeException(e);
+								throw new RuntimeException("Unable to open crash dialog", e);
 							}
 						}
 					}
@@ -101,7 +102,7 @@ public class Bisect {
 			.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
 	}
 
-	private static List<Integer> readSections(Path sectionsPath) throws IOException {
+	private static List<Integer> readSections(Path sectionsPath) throws IOException, InvalidCommunicationFileStateException {
 		if (Files.exists(sectionsPath)) {
 			var resultUnprocessed = Files.readAllLines(sectionsPath);
 			Files.delete(sectionsPath);
@@ -111,7 +112,7 @@ public class Bisect {
 			}
 			return result;
 		} else {
-			throw new RuntimeException("In bisect, but run was unable to read sections file");
+			throw new InvalidCommunicationFileStateException("sections file");
 		}
 	}
 
@@ -127,13 +128,13 @@ public class Bisect {
 		return BisectUtils.hash256(String.join(",", modSet));
 	}
 
-	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException {
+	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException, InvalidCommunicationFileStateException {
 		if (Files.exists(modSetPath)) {
 			var result = Files.readAllLines(modSetPath);
 			Files.delete(modSetPath);
 			return result;
 		} else {
-			throw new RuntimeException("In bisect, but run was unable to read mod set file");
+			throw new InvalidCommunicationFileStateException("mod set file");
 		}
 	}
 
@@ -155,7 +156,7 @@ public class Bisect {
 					}
 					copyDirectory(backupStorageLocation, worldStorageLocation);
 				} else {
-					throw new RuntimeException("save backup is not a directory");
+					throw new RuntimeException("Save backup is not a directory. please delete or rename it.");
 				}
 			}
 			copyDirectory(worldStorageLocation, backupStorageLocation);

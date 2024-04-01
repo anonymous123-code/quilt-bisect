@@ -22,7 +22,7 @@ public class ConnectScreenMixin {
 		try {
 			Files.writeString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.Server + "\n" + address.toString());
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Failed to write last join comm file", e);
 		}
 	}
 }
