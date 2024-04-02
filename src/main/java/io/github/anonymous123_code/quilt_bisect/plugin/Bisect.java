@@ -35,8 +35,11 @@ public class Bisect {
 
 	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
 		Optional<Integer> issue = getOrAddIssue(crashLog, activeBisectConfig);
-		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(new ArrayList<>(modIdSet), issue.get(),
-			crashLogPath != null ? crashLogPath : "", new ArrayList<>(sections)
+		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(
+			new ArrayList<>(modIdSet),
+			issue.get(),
+			crashLogPath != null ? crashLogPath : "",
+			new ArrayList<>(sections)
 		) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
 		activeBisectConfig.modSets.put(modSetHash, modSet);
 	}
@@ -71,7 +74,10 @@ public class Bisect {
 				if (issue instanceof Issue.CrashIssue crashIssue) {
 					for (var knownStacktrace : crashIssue.stacktraces) {
 						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
-						if (cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])) {
+						if (MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.Always || (
+							MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.FirstLineMatch &&
+								cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])
+						)) {
 							try {
 								if (BisectPluginUi.openDialog(cleanKnownStacktrace, stacktrace)) {
 									crashIssue.stacktraces.add(stacktrace);
@@ -93,9 +99,8 @@ public class Bisect {
 	}
 
 	public static String removeStacktracePoison(String oldStacktrace) {
-		return oldStacktrace
-			.replaceAll(":\\d+\\)", ")") // Line numbers
-			.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
+		return oldStacktrace.replaceAll(":\\d+\\)", ")") // Line numbers
+							.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
 	}
 
 	private static List<Integer> readSections(Path sectionsPath) throws IOException, InvalidCommunicationFileStateException {
@@ -116,7 +121,11 @@ public class Bisect {
 		var logFilePath = Path.of("logs", "latest.log");
 		if (Files.isRegularFile(logFilePath)) {
 			Files.createDirectories(Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory));
-			Files.copy(logFilePath, Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory, modSetHash + ".log"), REPLACE_EXISTING);
+			Files.copy(
+				logFilePath,
+				Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory, modSetHash + ".log"),
+				REPLACE_EXISTING
+			);
 		}
 	}
 

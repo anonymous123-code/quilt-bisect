@@ -23,6 +23,14 @@ public class MainConfig extends AbstractBisectConfig {
 	public AutoTest defaultBisectSettings = new AutoTest(AutoTest.AutoJoinType.None, "", "", false, 20 * 5, false);
 
 	/**
+	 * When now exact match is found, show diff popup
+	 * <li>Always</li>
+	 * <li>Never</li>
+	 * <li>FirstLineMatch: When the first line of a known stacktrace matches</li>
+	 */
+	public ShowDiffOptions showDiffWhenNoExactMatchFound = ShowDiffOptions.FirstLineMatch;
+
+	/**
 	 * The place vanilla stores its crash reports. Do not change unless you know what you are doing. Default "crash-reports"
 	 */
 	public String crashReportsDirectory = "crash-reports";
@@ -41,5 +49,11 @@ public class MainConfig extends AbstractBisectConfig {
 
 	@Override
 	public void setupReadGson(GsonBuilder builder) {
+	}
+
+	public enum ShowDiffOptions {
+		Always,
+		Never,
+		FirstLineMatch,
 	}
 }
