@@ -14,6 +14,13 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
 - (untested) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
+### Configuring
+The file `<config>/quilt_bisect/main.json` contains most things a user may want to configure, see [MainConfig.java](/src/main/java/io/github/anonymous123_code/quilt_bisect/shared/MainConfig.java) for now.
+
+The file `<config>/quilt_bisect/active_bisect.json` contains information about the active bisect, including the settings, all tried mod sets and their respective log, and issue information.
+
+The files `<config>/quilt_bisect/modSet.txt`, `<config>/quilt_bisect/sections.txt`, and `<config>/quilt_bisect/lastActiveJoin.txt` contain internal information and shouldn't be modified.
+
 ## How does it work
 ### Bisecting multiple issues at once
 While bisecting multiple issues works, there are a few assumptions bisect makes that are essential when multiple issues are present:

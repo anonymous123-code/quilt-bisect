@@ -16,7 +16,7 @@ public abstract class AbstractBisectConfig {
 	private transient final String name;
 
 	protected AbstractBisectConfig(String name) {
-		this.location = configDirectory.resolve(name + ".json5");
+		this.location = configDirectory.resolve(name + ".json");
 		this.name = name;
 	}
 
