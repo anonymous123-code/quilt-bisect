@@ -4,6 +4,7 @@ import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.*;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class BisectPlugin implements QuiltLoaderPlugin {
 	private static final PluginLogHandler LOGGER = PluginLogHandler.INSTANCE;
-	private final LogFileManager logFileManager = new LogFileManager(Path.of("crash-reports")); // TODO Config
+	private final LogFileManager logFileManager = new LogFileManager(Path.of(MainConfig.INSTANCE.crashReportsDirectory));
 	private final BisectPluginProcessManager processManager = new BisectPluginProcessManager();
 
 	private QuiltPluginContext context;
@@ -158,6 +159,11 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	@Override
 	public void load(QuiltPluginContext context, Map<String, LoaderValue> previousData) {
 		this.context = context;
+		try {
+			MainConfig.INSTANCE.safe();
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to write main config", e);
+		}
 		if (!"true".equals(System.getProperty("quiltBisect.forked"))) {
 			try {
 				runParent();
@@ -178,17 +184,15 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
 				treeNodeModLoadOptionMap.put(context.manager().getGuiNode(loadOption), loadOption);
 			}
-			switch (modId) {
-				case "quilt_bisect", "minecraft", "java", "quilt_loader", "modmenu" ->
-					LOGGER.info("Skipping mod id " + modId); //TODO config
-				default -> {
-					for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
-						if (loadOption instanceof ProvidedModOption) {
-							continue;
-						}
-						loadOptions.add(loadOption);
+			if (!MainConfig.INSTANCE.bisectSkipMods.contains(modId)) {
+				for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
+					if (loadOption instanceof ProvidedModOption) {
+						continue;
 					}
+					loadOptions.add(loadOption);
 				}
+			} else {
+				LOGGER.info("Skipping mod id " + modId);
 			}
 		}
 		LOGGER.info("Analyzing JiJ");

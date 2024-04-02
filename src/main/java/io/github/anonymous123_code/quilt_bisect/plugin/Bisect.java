@@ -115,8 +115,8 @@ public class Bisect {
 	private static void copyLatestLog(String modSetHash) throws IOException {
 		var logFilePath = Path.of("logs", "latest.log");
 		if (Files.isRegularFile(logFilePath)) {
-			Files.createDirectories(Path.of("bisectLogStorage"));
-			Files.copy(logFilePath, Path.of("bisectLogStorage", modSetHash + ".log"), REPLACE_EXISTING);
+			Files.createDirectories(Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory));
+			Files.copy(logFilePath, Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory, modSetHash + ".log"), REPLACE_EXISTING);
 		}
 	}
 
@@ -139,7 +139,7 @@ public class Bisect {
 		activeBisect.updateLoadOptions(loadOptions);
 		if (activeBisect.bisectSettings != null && activeBisect.bisectSettings.disableWorldSaving()) {
 			Path worldStorageLocation = Path.of("saves");
-			Path backupStorageLocation = Path.of("bisectSavesBackup");
+			Path backupStorageLocation = Path.of(MainConfig.INSTANCE.bisectSavesBackupDirectory);
 
 			if (Files.exists(backupStorageLocation)) {
 				if (Files.isDirectory(backupStorageLocation)) {

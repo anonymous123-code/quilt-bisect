@@ -2,6 +2,7 @@ package io.github.anonymous123_code.quilt_bisect.plugin.gui;
 
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,14 +96,22 @@ public class BisectCrashPrompt extends JOptionPane {
 			type = AutoTest.AutoJoinType.None;
 		}
 
-		if (selectedValue == null)
+		if (selectedValue == null) {
 			return null;
-        try {
-            return selectedValue == JOptionPane.OK_OPTION ? new AutoTest(type, name, commandInput.getText(), disableWorldSaving.isSelected(), NumberFormat.getInstance().parse(autoAcceptInput.getText()).intValue(), autoAcceptCheckBox.isSelected()) : null;
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
+		}
+		try {
+			return selectedValue == JOptionPane.OK_OPTION ? new AutoTest(
+				type,
+				name,
+				commandInput.getText(),
+				disableWorldSaving.isSelected(),
+				NumberFormat.getInstance().parse(autoAcceptInput.getText()).intValue(),
+				autoAcceptCheckBox.isSelected()
+			) : null;
+		} catch (ParseException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	private JPanel buildMessage(int exitCode, String crashLog) throws StacktraceExtractionFailException {
 		var dialogInfo = new JPanel();
@@ -121,9 +130,15 @@ public class BisectCrashPrompt extends JOptionPane {
 
 		BisectUtils.Result result = BisectUtils.getAutoJoinData();
 
+		var defaultBisectSettings = MainConfig.INSTANCE.defaultBisectSettings;
 		dialogInfo.add(this.createAutoJoinPanel(new AutoTest(
 			result.autoJoinMode(),
-			result.autoJoinName(), "", false, 20 * 5, false)), BorderLayout.SOUTH);
+			result.autoJoinName(),
+			defaultBisectSettings.autoJoinCommands(),
+			defaultBisectSettings.disableWorldSaving(),
+			defaultBisectSettings.autoAcceptTime(),
+			defaultBisectSettings.autoAccept()
+		)), BorderLayout.SOUTH);
 		return dialogInfo;
 	}
 
@@ -219,9 +234,15 @@ public class BisectCrashPrompt extends JOptionPane {
 
 		var autoAcceptPanel = new Panel(new FlowLayout(FlowLayout.LEFT));
 		autoAcceptInput.setText(String.valueOf(defaultSettings.autoAcceptTime()));
-		autoAcceptInput.setMinimumSize(new Dimension(autoAcceptInput.getFont().getSize() * 20, 0)); // TODO:rough scaling -> is there a better version?
+		autoAcceptInput.setMinimumSize(new Dimension(
+			autoAcceptInput.getFont().getSize() * 20,
+			0
+		)); // TODO:rough scaling -> is there a better version?
 		autoAcceptPanel.add(autoAcceptInput, BorderLayout.CENTER);
-		autoAcceptPanel.add(new JLabel("(1/20 seconds minimum wait, if singleplayer also minimum ticks count)"), BorderLayout.LINE_END);
+		autoAcceptPanel.add(
+			new JLabel("(1/20 seconds minimum wait, if singleplayer also minimum ticks count)"),
+			BorderLayout.LINE_END
+		);
 		panel.add(autoAcceptPanel, secondColumnConstraints);
 
 
