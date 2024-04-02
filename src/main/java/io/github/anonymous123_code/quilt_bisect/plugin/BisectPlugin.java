@@ -30,6 +30,37 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	private QuiltPluginContext context;
 
+	private static SectionList calculateSectionList(ArrayList<ModLoadOption> modSet) {
+		SectionList sections;
+		ActiveBisectConfig.update();
+		var activeConfig = ActiveBisectConfig.getInstance();
+		if (activeConfig.isActive()) {
+			try {
+				sections = Bisect.childBisect(modSet);
+				ActiveBisectConfig.getInstance().safe(false);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			var fixes = BisectUtils.calculateFixes(activeConfig.issues.stream().map(issue -> issue.fix).toList());
+			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
+			// Safe because only one section exists
+			sections = SectionList.from(modSet.stream()
+											  .map(ModLoadOption::id)
+											  .filter(it -> !smallestFix.contains(it))
+											  .toList());
+		}
+
+		if (sections.sectionIndices().size() == 1) {
+			// Sorting is safe under these conditions
+			sections.modIds().sort(null);
+		} else {
+			// TODO Check that mods is sorted
+		}
+
+		return sections;
+	}
+
 	private void runParent() throws IOException {
 		LOGGER.info("preparing to invoke great evils");
 		logFileManager.scan();
@@ -56,14 +87,19 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 						"This is likely caused by an error in bisect itself or by another loader plugin."));
 					context.haltLoading();
 				} catch (StacktraceExtractionFailException e) {
-					var error = context.reportError(QuiltLoaderText.of("Bisect: Failed to extract stack trace from crash log."))
-									   .appendDescription(QuiltLoaderText.of("Please open an issue with the log attached"));
+					var error = context.reportError(QuiltLoaderText.of(
+										   "Bisect: Failed to extract stack trace from crash log."))
+									   .appendDescription(QuiltLoaderText.of(
+										   "Please open an issue with the log attached"));
 					//noinspection OptionalGetWithoutIsPresent
 					error.addCopyFileToClipboardButton(
 						QuiltLoaderText.of("Copy crash log file"),
 						crashLogFile.get()
 					);
-					error.addOpenLinkButton(QuiltLoaderText.of("Create new issue"), "https://github.com/anonymous123-code/quilt-bisect/issues/new");
+					error.addOpenLinkButton(
+						QuiltLoaderText.of("Create new issue"),
+						"https://github.com/anonymous123-code/quilt-bisect/issues/new"
+					);
 					context.haltLoading();
 				}
 			} else {
@@ -87,13 +123,18 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 							"This is likely caused by an error in bisect itself or by another loader plugin."));
 						context.haltLoading();
 					} catch (StacktraceExtractionFailException e) {
-						var error = context.reportError(QuiltLoaderText.of("Bisect: Failed to extract stack trace from crash log."))
-							   .appendDescription(QuiltLoaderText.of("Please open an issue with the log attached"));
+						var error = context.reportError(QuiltLoaderText.of(
+											   "Bisect: Failed to extract stack trace from crash log."))
+										   .appendDescription(QuiltLoaderText.of(
+											   "Please open an issue with the log attached"));
 						error.addCopyFileToClipboardButton(
 							QuiltLoaderText.of("Copy crash log file"),
 							crashLogFile.get()
 						);
-						error.addOpenLinkButton(QuiltLoaderText.of("Create new issue"), "https://github.com/anonymous123-code/quilt-bisect/issues/new");
+						error.addOpenLinkButton(
+							QuiltLoaderText.of("Create new issue"),
+							"https://github.com/anonymous123-code/quilt-bisect/issues/new"
+						);
 						context.haltLoading();
 					}
 				}
@@ -101,6 +142,16 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
 		}
 		System.exit(1);
+	}
+
+	private void runChild() {
+		Optional<ProcessHandle> parentProcess = ProcessHandle.current().parent();
+		if (parentProcess.isEmpty()) {
+			LOGGER.warn("Failed to get parent process: will keep running if a launcher terminates the game!");
+		} else {
+			processManager.parentExitWatchdog(parentProcess.get());
+		}
+		System.setProperty("quiltBisect.active", "true");
 	}
 
 	@Override
@@ -117,23 +168,15 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		runChild();
 	}
 
-	private void runChild() {
-		Optional<ProcessHandle> parentProcess = ProcessHandle.current().parent();
-		if (parentProcess.isEmpty()) {
-			LOGGER.warn("Failed to get parent process: will keep running if a launcher terminates the game!");
-		} else {
-			processManager.parentExitWatchdog(parentProcess.get());
-		}
-		System.setProperty("quiltBisect.active", "true");
-	}
-
 	@Override
 	public void beforeSolve() { // TODO Split
 		LOGGER.info("Discovering mods...");
 		ArrayList<ModLoadOption> loadOptions = new ArrayList<>();
-		List<ModLoadOption> allLoadOptions = new ArrayList<>();
+		Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap = new HashMap<>();
 		for (String modId : context.manager().getModIds()) {
-			allLoadOptions.addAll(context.manager().getAllMods(modId));
+			for (ModLoadOption loadOption : context.manager().getAllMods(modId)) {
+				treeNodeModLoadOptionMap.put(context.manager().getGuiNode(loadOption), loadOption);
+			}
 			switch (modId) {
 				case "quilt_bisect", "minecraft", "java", "quilt_loader", "modmenu" ->
 					LOGGER.info("Skipping mod id " + modId); //TODO config
@@ -149,63 +192,23 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		}
 		LOGGER.info("Analyzing JiJ");
 		Map<ModLoadOption, ArrayList<ModLoadOption>> jij = new HashMap<>();
-		Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap = new HashMap<>();
-		for (ModLoadOption loadOption : allLoadOptions) {
-			treeNodeModLoadOptionMap.put(context.manager().getGuiNode(loadOption), loadOption);
-		}
 		ArrayList<ModLoadOption> modSet = new ArrayList<>();
 		for (ModLoadOption loadOption : loadOptions) {
 			jij.putIfAbsent(loadOption, new ArrayList<>());
 			if (!loadOption.isMandatory()) { // Assume the mod was JiJed
-				var parent = context.manager().getGuiNode(loadOption).parent();
-				boolean notFound = true;
-				while (parent != null) {
-					var parentLoadOption = treeNodeModLoadOptionMap.get(parent);
-					if (parentLoadOption != null) {
-						jij.putIfAbsent(parentLoadOption, new ArrayList<>());
-						jij.get(parentLoadOption).add(loadOption);
-						notFound = false;
-						break;
-					} else {
-						parent = parent.parent();
-					}
+				ModLoadOption parent = this.findParentLoadOption(loadOption, treeNodeModLoadOptionMap);
+				if (parent != null) {
+					jij.putIfAbsent(parent, new ArrayList<>());
+					jij.get(parent).add(loadOption);
+					continue;
 				}
-				if (notFound) {
-					LOGGER.warn("Containing mod not found for mod " + loadOption + ", assuming its a top-level mod.");
-					modSet.add(loadOption);
-				}
-			} else {
-				modSet.add(loadOption);
+				LOGGER.warn("Containing mod not found for mod " + loadOption + ", assuming its a top-level mod.");
 			}
+			modSet.add(loadOption);
 		}
 
 		LOGGER.info("Calculating mod set");
-		ActiveBisectConfig.update();
-		var activeConfig = ActiveBisectConfig.getInstance();
-		SectionList sections;
-		if (activeConfig.isActive()) {
-			try {
-				sections = Bisect.childBisect(modSet);
-				ActiveBisectConfig.getInstance().safe(false);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		} else {
-			var fixes = BisectUtils.calculateFixes(activeConfig.issues.stream().map(issue -> issue.fix).toList());
-			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
-			// Safe because only one section exists
-			sections = SectionList.from(modSet.stream()
-											  .map(ModLoadOption::id)
-											  .filter(it -> !smallestFix.contains(it))
-											  .toList());
-		}
-
-		if (sections.sectionIndices().size() == 1) {
-			// Sorting is safe under these conditions
-			sections.modIds().sort(null);
-		} else {
-			// TODO Check that mods is sorted
-		}
+		SectionList sections = calculateSectionList(modSet);
 
 		LOGGER.info("Modifying mods...");
 		PluginGuiTreeNode node = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
@@ -228,6 +231,19 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to write mod set comms files", e);
 		}
+	}
+
+	public @Nullable ModLoadOption findParentLoadOption(ModLoadOption loadOption, Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap) {
+		var parent = context.manager().getGuiNode(loadOption).parent();
+		while (parent != null) {
+			var parentLoadOption = treeNodeModLoadOptionMap.get(parent);
+			if (parentLoadOption != null) {
+				return parentLoadOption;
+			} else {
+				parent = parent.parent();
+			}
+		}
+		return null;
 	}
 
 	private void makeOptional(Map<ModLoadOption, ArrayList<ModLoadOption>> jij, ModLoadOption loadOption, PluginGuiTreeNode node) {
