@@ -54,10 +54,10 @@ public class BisectUtils {
 	public static Result getAutoJoinData() {
 		String autoJoinName;
 		AutoTest.AutoJoinType autoJoinMode = AutoTest.AutoJoinType.None;
-		if (Files.exists(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
+		if (Files.exists(CommonConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
 			String[] s;
 			try {
-				s = Files.readString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
+				s = Files.readString(CommonConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to read last join comm file", e);
 			}

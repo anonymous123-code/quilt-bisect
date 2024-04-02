@@ -5,6 +5,7 @@ import dev.lambdaurora.spruceui.screen.SpruceScreen;
 import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.GuiGraphics;
@@ -62,7 +63,7 @@ public class SelectIssueScreen extends SpruceScreen {
 
 	private void onDone() {
         try {
-            Files.writeString(ActiveBisectConfig.configDirectory.resolve("issue.txt"), Integer.toString(issueList.getSelectedOrNull().id));
+            Files.writeString(CommonConfig.configDirectory.resolve("issue.txt"), Integer.toString(issueList.getSelectedOrNull().id));
         } catch (IOException e) {
             throw new RuntimeException("Failed to write issue comm file", e);
         }

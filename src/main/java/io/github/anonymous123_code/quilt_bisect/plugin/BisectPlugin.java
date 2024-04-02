@@ -3,6 +3,7 @@ package io.github.anonymous123_code.quilt_bisect.plugin;
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.*;
@@ -221,11 +222,11 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 		try {
 			Files.writeString(
-				ActiveBisectConfig.configDirectory.resolve("modSet.txt"),
+				CommonConfig.configDirectory.resolve("modSet.txt"),
 				String.join("\n", sections.modIds())
 			);
 			Files.writeString(
-				ActiveBisectConfig.configDirectory.resolve("sections.txt"),
+				CommonConfig.configDirectory.resolve("sections.txt"),
 				sections.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
 			);
 		} catch (IOException e) {

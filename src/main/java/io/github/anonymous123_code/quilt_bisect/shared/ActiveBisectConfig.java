@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonParseException;
-import org.quiltmc.loader.api.QuiltLoader;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
 
 import java.io.IOException;
@@ -13,7 +12,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class ActiveBisectConfig {
-	public static final Path configDirectory = QuiltLoader.getConfigDir().resolve("quilt_bisect");
 	private static ActiveBisectConfig INSTANCE = create();
 
 	public static ActiveBisectConfig getInstance() {
@@ -23,14 +21,14 @@ public class ActiveBisectConfig {
 	private ActiveBisectConfig() {}
 
 	private static ActiveBisectConfig create() {
-		if (!Files.exists(configDirectory)) {
+		if (!Files.exists(CommonConfig.configDirectory)) {
 			try {
-				Files.createDirectories(configDirectory);
+				Files.createDirectories(CommonConfig.configDirectory);
 			} catch (IOException e) {
-				throw new RuntimeException(String.format("Failed to create directory '%s'", configDirectory), e);
+				throw new RuntimeException(String.format("Failed to create directory '%s'", CommonConfig.configDirectory), e);
 			}
 		}
-		var config_file = configDirectory.resolve("active_bisect.json");
+		var config_file = CommonConfig.configDirectory.resolve("active_bisect.json");
 		if (Files.exists(config_file) && Files.isRegularFile(config_file)) {
 			return serializeFromFile(config_file);
 		} else {
@@ -52,7 +50,7 @@ public class ActiveBisectConfig {
 
 	public void safe(boolean force) throws IOException {
 		if (!force && !isUpToDate()) return;
-		var config_file = configDirectory.resolve("active_bisect.json");
+		var config_file = CommonConfig.configDirectory.resolve("active_bisect.json");
 		var gson = new GsonBuilder().setPrettyPrinting().create();
 		Files.writeString(config_file, gson.toJson(this));
 	}

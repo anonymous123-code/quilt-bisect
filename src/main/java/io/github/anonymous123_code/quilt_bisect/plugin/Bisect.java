@@ -3,6 +3,7 @@ package io.github.anonymous123_code.quilt_bisect.plugin;
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
@@ -22,7 +23,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
 	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException, InvalidCommunicationFileStateException, StacktraceExtractionFailException {
-		var config_dir = ActiveBisectConfig.configDirectory;
+		var config_dir = CommonConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
 		List<String> modSet = readModSet(modset_path);
@@ -47,7 +48,7 @@ public class Bisect {
 
 
 	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
-		var issuePath = ActiveBisectConfig.configDirectory.resolve("issue.txt");
+		var issuePath = CommonConfig.configDirectory.resolve("issue.txt");
 		if (Files.exists(issuePath)) {
 			String issueData;
 			try {
