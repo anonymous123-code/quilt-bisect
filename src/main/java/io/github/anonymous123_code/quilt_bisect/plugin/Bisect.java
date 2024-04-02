@@ -1,12 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
-import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.Issue;
-import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
-import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
+import io.github.anonymous123_code.quilt_bisect.shared.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
@@ -23,7 +18,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
 	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException, InvalidCommunicationFileStateException, StacktraceExtractionFailException {
-		var config_dir = CommonConfig.configDirectory;
+		var config_dir = AbstractBisectConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
 		List<String> modSet = readModSet(modset_path);
@@ -32,9 +27,9 @@ public class Bisect {
 
 		String modSetHash = generateModSetHash(modSet);
 		copyLatestLog(modSetHash);
-		var active_bisect = ActiveBisectConfig.getInstance();
+		var active_bisect = ActiveBisectConfig.INSTANCE;
 		processRun(modSet, sections, modSetHash, crashLog, crashLogPath, active_bisect);
-		active_bisect.safe(false);
+		active_bisect.safe();
 	}
 
 
@@ -48,7 +43,7 @@ public class Bisect {
 
 
 	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
-		var issuePath = CommonConfig.configDirectory.resolve("issue.txt");
+		var issuePath = AbstractBisectConfig.configDirectory.resolve("issue.txt");
 		if (Files.exists(issuePath)) {
 			String issueData;
 			try {
@@ -140,7 +135,7 @@ public class Bisect {
 	}
 
 	public static SectionList childBisect(List<ModLoadOption> loadOptions) throws IOException {
-		var activeBisect = ActiveBisectConfig.getInstance();
+		var activeBisect = ActiveBisectConfig.INSTANCE;
 		activeBisect.updateLoadOptions(loadOptions);
 		if (activeBisect.bisectSettings != null && activeBisect.bisectSettings.disableWorldSaving()) {
 			Path worldStorageLocation = Path.of("saves");
@@ -162,7 +157,7 @@ public class Bisect {
 			}
 			copyDirectory(worldStorageLocation, backupStorageLocation);
 		}
-		activeBisect.safe(false);
+		activeBisect.safe();
 		return calculateModSet(activeBisect);
 	}
 

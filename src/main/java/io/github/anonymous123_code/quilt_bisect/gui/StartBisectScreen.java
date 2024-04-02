@@ -47,8 +47,8 @@ public class StartBisectScreen extends CreateIssueScreen {
 
 	@Override
 	protected void onDone() {
-		ActiveBisectConfig.update();
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
+		activeBisectConfig.update();
 		activeBisectConfig.issues.add(new Issue.UserIssue(issueNameWidget.getText()));
 		activeBisectConfig.bisectSettings = new AutoTest(autoJoinMode.convertToAutoTest(),
 			autoJoinNameWidget.getText(),

@@ -5,8 +5,8 @@ import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
 import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
@@ -32,11 +32,11 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	protected static void saveAndQuit() {
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
 		try {
-			activeBisectConfig.safe(false);
+			activeBisectConfig.safe();
 			Files.writeString(
-				CommonConfig.configDirectory.resolve("issue.txt"),
+				AbstractBisectConfig.configDirectory.resolve("issue.txt"),
 				Integer.toString(activeBisectConfig.issues.size() - 1)
 			);
 			GracefulTerminator.gracefullyTerminate(56);
@@ -98,8 +98,8 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	protected void onDone() {
-		ActiveBisectConfig.update();
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
+		activeBisectConfig.update();
 		activeBisectConfig.issues.add(new Issue.UserIssue(issueNameWidget.getText()));
 		saveAndQuit();
 	}

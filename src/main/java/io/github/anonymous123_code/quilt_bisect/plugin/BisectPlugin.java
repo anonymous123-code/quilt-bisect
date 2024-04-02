@@ -1,9 +1,9 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
-import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.*;
@@ -33,12 +33,12 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	private static SectionList calculateSectionList(ArrayList<ModLoadOption> modSet) {
 		SectionList sections;
-		ActiveBisectConfig.update();
-		var activeConfig = ActiveBisectConfig.getInstance();
+		var activeConfig = ActiveBisectConfig.INSTANCE;
+		activeConfig.update();
 		if (activeConfig.isActive()) {
 			try {
 				sections = Bisect.childBisect(modSet);
-				ActiveBisectConfig.getInstance().safe(false);
+				ActiveBisectConfig.INSTANCE.safe();
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -71,8 +71,8 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 				System.exit(0);
 			}
 
-			ActiveBisectConfig.update();
-			ActiveBisectConfig config = ActiveBisectConfig.getInstance();
+			ActiveBisectConfig config = ActiveBisectConfig.INSTANCE;
+			config.update();
 
 			var crashLogFile = logFileManager.getNew();
 			if (config.isActive()) {
@@ -109,7 +109,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 				} else {
 					try {
 						var crashLog = Files.readString(crashLogFile.get());
-						var active_bisect = ActiveBisectConfig.getInstance();
+						var active_bisect = ActiveBisectConfig.INSTANCE;
 						active_bisect.bisectSettings = BisectPluginUi.openDialog(exitCode.get(), crashLog);
 						if (active_bisect.isActive()) {
 							Bisect.parentBisect(crashLog, crashLogFile.get().getFileName().toString());
@@ -170,7 +170,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 	}
 
 	@Override
-	public void beforeSolve() { // TODO Split
+	public void beforeSolve() {
 		LOGGER.info("Discovering mods...");
 		ArrayList<ModLoadOption> loadOptions = new ArrayList<>();
 		Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap = new HashMap<>();
@@ -222,11 +222,11 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 		try {
 			Files.writeString(
-				CommonConfig.configDirectory.resolve("modSet.txt"),
+				AbstractBisectConfig.configDirectory.resolve("modSet.txt"),
 				String.join("\n", sections.modIds())
 			);
 			Files.writeString(
-				CommonConfig.configDirectory.resolve("sections.txt"),
+				AbstractBisectConfig.configDirectory.resolve("sections.txt"),
 				sections.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
 			);
 		} catch (IOException e) {

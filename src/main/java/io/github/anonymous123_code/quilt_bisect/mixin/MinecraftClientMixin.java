@@ -1,9 +1,9 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
 import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
-import io.github.anonymous123_code.quilt_bisect.shared.CommonConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.resource.pack.ResourcePackManager;
@@ -23,7 +23,7 @@ public class MinecraftClientMixin {
 	@Inject(method = "startIntegratedServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/storage/WorldSaveStorage$Session;backupLevelDataFile(Lnet/minecraft/registry/DynamicRegistryManager;Lnet/minecraft/world/SaveProperties;)V"))
 	public void updateAutoJoinData(String worldId, WorldSaveStorage.Session session, ResourcePackManager resourcePackManager, WorldStem worldStem, boolean isNewWorld, CallbackInfo ci) {
         try {
-            Files.writeString(CommonConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.World + "\n" + worldId);
+            Files.writeString(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.World + "\n" + worldId);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write last join comm file", e);
         }
@@ -31,7 +31,7 @@ public class MinecraftClientMixin {
 
 	@Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("TAIL"))
 	public void disableAutoAcceptOnDisconnect(Screen screen, CallbackInfo ci) {
-		if (ActiveBisectConfig.getInstance().isActive() && ActiveBisectConfig.getInstance().bisectSettings.autoJoinType() != AutoTest.AutoJoinType.None) { // Only disable auto accept if something was automatically joined
+		if (ActiveBisectConfig.INSTANCE.isActive() && ActiveBisectConfig.INSTANCE.bisectSettings.autoJoinType() != AutoTest.AutoJoinType.None) { // Only disable auto accept if something was automatically joined
 			QuiltBisect.joinedTimestamp = 0;
 		}
 	}

@@ -20,7 +20,7 @@ public class DownloadingTerrainScreenMixin extends Screen {
 
 	@Inject(method = "closeScreen", at = @At("TAIL"))
 	public void onReadyToPlay(CallbackInfo ci) {
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
 		if (activeBisectConfig.isActive() && activeBisectConfig.bisectSettings.autoJoinType() != AutoTest.AutoJoinType.None && QuiltBisect.firstTimeInAutoJoinScope) {
 			runCommands();
 			if (activeBisectConfig.bisectSettings.autoAccept()) { // Only start auto accept timer if auto join is active
@@ -32,7 +32,7 @@ public class DownloadingTerrainScreenMixin extends Screen {
 
 	@Unique
 	private void runCommands() {
-		for (String message : ActiveBisectConfig.getInstance().bisectSettings.autoJoinCommands().split("\n")) {
+		for (String message : ActiveBisectConfig.INSTANCE.bisectSettings.autoJoinCommands().split("\n")) {
 			if (!message.isEmpty()) {
 				assert client != null;
 				assert client.player != null;
