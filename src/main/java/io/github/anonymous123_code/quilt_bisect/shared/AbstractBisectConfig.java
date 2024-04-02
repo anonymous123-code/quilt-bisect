@@ -12,8 +12,8 @@ import java.nio.file.Path;
 
 public abstract class AbstractBisectConfig {
 	public static final Path configDirectory = QuiltLoader.getConfigDir().resolve("quilt_bisect");
-	private final Path location;
-	private final String name;
+	private transient final Path location;
+	private transient final String name;
 
 	protected AbstractBisectConfig(String name) {
 		this.location = configDirectory.resolve(name + ".json5");
@@ -33,7 +33,7 @@ public abstract class AbstractBisectConfig {
 			constr.setAccessible(true);
 			T inst = constr.newInstance();
 			inst.update();
-			return constr.newInstance();
+			return inst;
 		} catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
 				 IllegalAccessException e) {
 			throw new RuntimeException(e);
