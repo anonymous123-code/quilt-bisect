@@ -21,14 +21,20 @@ public class BisectUtils {
 	public static final Pattern MOD_ID_AND_FILE_NAME_REGEX = Pattern.compile(
 		"\\|[^|]*\\|[^|]*\\| *([a-zA-Z0-9_-]+) *\\|(?:.*\\|)*(?:[^|/]*/)*([^|/\\\\ ]+) *\\|[^|]*\\|$");
 
-	public static String extractStackTrace(String crashLog) {
+	public static String extractStackTrace(String crashLog) throws StacktraceExtractionFailException {
 		Pattern r = Pattern.compile(
 			"Description:.*\n\n((?:.+\n)*)\n\nA detailed walkthrough of the error, its code path and all known details is as follows");
 		var matcher = r.matcher(crashLog);
 		if (matcher.find()) {
 			return matcher.group(1);
 		} else {
-			throw new RuntimeException("Failed to extract stacktrace from crash log");
+			Pattern loaderCrash = Pattern.compile("-- Crash --.*\n\n((?:.+\n)*)\n\n--");
+			matcher = loaderCrash.matcher(crashLog);
+			if (matcher.find()) {
+				return matcher.group(1);
+			} else {
+				throw new StacktraceExtractionFailException();
+			}
 		}
 	}
 
@@ -48,12 +54,12 @@ public class BisectUtils {
 	public static Result getAutoJoinData() {
 		String autoJoinName;
 		AutoTest.AutoJoinType autoJoinMode = AutoTest.AutoJoinType.None;
-		if (Files.exists(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
+		if (Files.exists(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt"))) {
 			String[] s;
 			try {
-				s = Files.readString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
+				s = Files.readString(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt")).split("\n", 2);
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				throw new RuntimeException("Failed to read last join comm file", e);
 			}
 			autoJoinMode = AutoTest.AutoJoinType.from(s[0]);
 			autoJoinName = autoJoinMode != AutoTest.AutoJoinType.None ? s[1] : "";

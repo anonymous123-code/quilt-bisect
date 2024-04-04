@@ -11,6 +11,7 @@ import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
+import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.OrderedText;
@@ -47,10 +48,11 @@ public class StartBisectScreen extends CreateIssueScreen {
 
 	@Override
 	protected void onDone() {
-		ActiveBisectConfig.update();
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
+		activeBisectConfig.update();
 		activeBisectConfig.issues.add(new Issue.UserIssue(issueNameWidget.getText()));
-		activeBisectConfig.bisectSettings = new AutoTest(autoJoinMode.convertToAutoTest(),
+		activeBisectConfig.bisectSettings = new AutoTest(
+			autoJoinMode.convertToAutoTest(),
 			autoJoinNameWidget.getText(),
 			autoJoinCommandInput.getText(),
 			autoJoinDisableWorldSavingWidget.getValue(),
@@ -65,7 +67,8 @@ public class StartBisectScreen extends CreateIssueScreen {
 		String autoJoinName = result.autoJoinName();
 		autoJoinMode = AutoJoinType.from(result.autoJoinMode());
 		// Auto Join
-		addDrawableChild(new SpruceButtonWidget(centerVertically(row, 0, 20),
+		addDrawableChild(new SpruceButtonWidget(
+			centerVertically(row, 0, 20),
 			CELL_WIDTH,
 			20,
 			autoJoinMode.text,
@@ -74,7 +77,8 @@ public class StartBisectScreen extends CreateIssueScreen {
 				button.setMessage(autoJoinMode.text);
 			}
 		));
-		autoJoinNameWidget = new SpruceTextFieldWidget(centerVertically(row, 1, 20),
+		autoJoinNameWidget = new SpruceTextFieldWidget(
+			centerVertically(row, 1, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_join.name")
@@ -84,29 +88,32 @@ public class StartBisectScreen extends CreateIssueScreen {
 	}
 
 	private void addDisableWorldSavingOption(int row) {
-		autoJoinDisableWorldSavingWidget = new SpruceCheckboxWidget(centerVertically(row, 0, 20),
+		autoJoinDisableWorldSavingWidget = new SpruceCheckboxWidget(
+			centerVertically(row, 0, 20),
 			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
 			20,
 			Text.translatable("gui.bisect.start.disable_world_saving"),
-			false
+			MainConfig.INSTANCE.defaultBisectSettings.disableWorldSaving()
 		);
 		addDrawableChild(autoJoinDisableWorldSavingWidget);
 	}
 
 	private void addAutoAcceptOption(int row) {
-		autoJoinEnableAutoAcceptWidget = new SpruceCheckboxWidget(centerVertically(row, 0, 20),
+		autoJoinEnableAutoAcceptWidget = new SpruceCheckboxWidget(
+			centerVertically(row, 0, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_accept.enable"),
-			false
+			MainConfig.INSTANCE.defaultBisectSettings.autoAccept()
 		);
 		addDrawableChild(autoJoinEnableAutoAcceptWidget);
-		SpruceTextFieldWidget autoJoinAutoAcceptTimeWidget = new SpruceTextFieldWidget(centerVertically(row, 1, 20),
+		SpruceTextFieldWidget autoJoinAutoAcceptTimeWidget = new SpruceTextFieldWidget(
+			centerVertically(row, 1, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_accept.time")
 		);
-		autoJoinAutoAcceptTime = 20 * 5;
+		autoJoinAutoAcceptTime = MainConfig.INSTANCE.defaultBisectSettings.autoAcceptTime();
 		autoJoinAutoAcceptTimeWidget.setText(String.valueOf(autoJoinAutoAcceptTime));
 		autoJoinAutoAcceptTimeWidget.setTextPredicate(SpruceTextFieldWidget.INTEGER_INPUT_PREDICATE);
 		autoJoinAutoAcceptTimeWidget.setRenderTextProvider((displayedText, offset) -> {
@@ -117,21 +124,25 @@ public class StartBisectScreen extends CreateIssueScreen {
 				return OrderedText.forward(displayedText, Style.EMPTY.withColor(Formatting.RED));
 			}
 		});
-		autoJoinAutoAcceptTimeWidget.setChangedListener(input -> autoJoinAutoAcceptTime = SpruceUtil.parseIntFromString(input));
+		autoJoinAutoAcceptTimeWidget.setChangedListener(input -> autoJoinAutoAcceptTime = SpruceUtil.parseIntFromString(
+			input));
 		autoJoinAutoAcceptTimeWidget.setTooltip(Text.translatable("gui.bisect.start.auto_accept.time.tooltip"));
 		addDrawableChild(autoJoinAutoAcceptTimeWidget);
 	}
 
 	private void addCommandInput(int row, int rowCount) {
-		addDrawableChild(new SpruceLabelWidget(centerVertically(row, 0, 10),
+		addDrawableChild(new SpruceLabelWidget(
+			centerVertically(row, 0, 10),
 			Text.translatable("gui.bisect.start.command.label"),
 			CELL_WIDTH * 2 + HORIZONTAL_PADDING
 		));
-		autoJoinCommandInput = new SpruceTextAreaWidget(Position.of(corner(row + 1, 0), 0, -VERTICAL_PADDING),
+		autoJoinCommandInput = new SpruceTextAreaWidget(
+			Position.of(corner(row + 1, 0), 0, -VERTICAL_PADDING),
 			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
 			(rowCount - 1) * (CELL_HEIGHT + VERTICAL_PADDING) - VERTICAL_PADDING,
 			Text.translatable("gui.bisect.start.command.input")
 		);
+		autoJoinCommandInput.setText(MainConfig.INSTANCE.defaultBisectSettings.autoJoinCommands());
 		addDrawableChild(autoJoinCommandInput);
 	}
 

@@ -22,7 +22,7 @@ public class TitleScreenMixin {
 
 	@Inject(method = "init", at = @At("HEAD"))
 	public void init(CallbackInfo ci) {
-		var conf = ActiveBisectConfig.getInstance();
+		var conf = ActiveBisectConfig.INSTANCE;
 		if (this.doBackgroundFade && !conf.isActive() && !conf.issues.isEmpty()) {
 			MinecraftClient.getInstance().setScreen(new BisectSummaryScreen());
 		}
@@ -30,7 +30,7 @@ public class TitleScreenMixin {
 
 	@Inject(method = "render", at = @At("TAIL"))
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-		var conf = ActiveBisectConfig.getInstance();
+		var conf = ActiveBisectConfig.INSTANCE;
 		if (conf.isActive() && conf.bisectSettings.autoAccept() && conf.bisectSettings.autoJoinType() == AutoTest.AutoJoinType.None && QuiltBisect.firstTimeInAutoJoinScope) {
 			QuiltBisect.joinedTimestamp = System.currentTimeMillis();
 			QuiltBisect.firstTimeInAutoJoinScope = false;

@@ -25,14 +25,14 @@ public class BisectSummaryScreen extends SpruceScreen {
 	@Override
 	protected void init() {
 		super.init();
-		var oldBisect = ActiveBisectConfig.getInstance();
+		var oldBisect = ActiveBisectConfig.INSTANCE;
 		StringBuilder sb = new StringBuilder();
-		sb.append("List of Reproduction cases for Issues:\n");
+		sb.append("List of Reproduction cases for Issues:\n"); // TODO this looks  horrible, pls fix
 		int crashIndex = 1;
 		for (Issue issue : oldBisect.issues) {
 			if (issue instanceof Issue.CrashIssue crashIssue) {
 				sb.append("  - Crash ").append(crashIndex).append(":").append("\n");
-				sb.append("    Error: ").append(crashIssue.stacktrace.split("\n", 2)[0]).append("\n");
+				sb.append("    Error: ").append(crashIssue.stacktraces.get(0).split("\n", 2)[0]).append("\n");
 				crashIndex++;
 			} else if (issue instanceof Issue.LogIssue logIssue) {
 				sb.append("  - ").append(logIssue.name).append("\n");

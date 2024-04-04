@@ -44,7 +44,7 @@ public class BisectPluginProcessManager {
 					break;
 				} catch (TimeoutException ignored) {}
 			}
-		}, "ModVotePlugin-ParentExitWatchdog");
+		}, "QuiltBisectPlugin-ParentExitWatchdog");
 		t.setDaemon(true);
 		t.start();
 	}

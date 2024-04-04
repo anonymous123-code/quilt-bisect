@@ -1,31 +1,24 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
-import io.github.anonymous123_code.quilt_bisect.shared.Issue;
-import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
+import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
+import io.github.anonymous123_code.quilt_bisect.shared.*;
 import org.jetbrains.annotations.NotNull;
-import org.quiltmc.loader.api.ModMetadata;
-import org.quiltmc.loader.api.QuiltLoader;
-import org.quiltmc.loader.api.gui.QuiltLoaderText;
-import org.quiltmc.loader.api.plugin.QuiltPluginContext;
-import org.quiltmc.loader.impl.fabric.metadata.ParseMetadataException;
+import org.jetbrains.annotations.Nullable;
+import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
 
+import javax.swing.*;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.zip.ZipInputStream;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Bisect {
-	public static void parentBisect(Optional<String> crashLog, Optional<String> crashLogPath) throws IOException, NoSuchAlgorithmException {
-		var config_dir = ActiveBisectConfig.configDirectory;
+	public static void parentBisect(@Nullable String crashLog, @Nullable String crashLogPath) throws IOException, NoSuchAlgorithmException, InvalidCommunicationFileStateException, StacktraceExtractionFailException {
+		var config_dir = AbstractBisectConfig.configDirectory;
 		var modset_path = config_dir.resolve("modSet.txt");
 		var sections_path = config_dir.resolve("sections.txt");
 		List<String> modSet = readModSet(modset_path);
@@ -34,12 +27,83 @@ public class Bisect {
 
 		String modSetHash = generateModSetHash(modSet);
 		copyLatestLog(modSetHash);
-		var active_bisect = ActiveBisectConfig.getInstance();
-		active_bisect.processRun(modSet, sections, modSetHash, crashLog, crashLogPath);
-		active_bisect.safe(false);
+		var active_bisect = ActiveBisectConfig.INSTANCE;
+		processRun(modSet, sections, modSetHash, crashLog, crashLogPath, active_bisect);
+		active_bisect.safe();
 	}
 
-	private static List<Integer> readSections(Path sectionsPath) throws IOException {
+
+	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
+		Optional<Integer> issue = getOrAddIssue(crashLog, activeBisectConfig);
+		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(
+			new ArrayList<>(modIdSet),
+			issue.get(),
+			crashLogPath != null ? crashLogPath : "",
+			new ArrayList<>(sections)
+		) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
+		activeBisectConfig.modSets.put(modSetHash, modSet);
+	}
+
+
+	public static Optional<Integer> getOrAddIssue(@Nullable String crashLog, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
+		var issuePath = AbstractBisectConfig.configDirectory.resolve("issue.txt");
+		if (Files.exists(issuePath)) {
+			String issueData;
+			try {
+				issueData = Files.readString(issuePath);
+				Files.delete(issuePath);
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to read issue comm file", e);
+			}
+			return Optional.of(Integer.parseInt(issueData, 10));
+		} else if (crashLog != null) {
+			var stacktrace = removeStacktracePoison(BisectUtils.extractStackTrace(crashLog));
+			for (int issueIndex = 0; issueIndex < activeBisectConfig.issues.size(); issueIndex++) {
+				var issue = activeBisectConfig.issues.get(issueIndex);
+				if (issue instanceof Issue.CrashIssue crashIssue) {
+					for (var knownStacktrace : crashIssue.stacktraces) {
+						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
+						if (cleanKnownStacktrace.equals(stacktrace)) {
+							return Optional.of(issueIndex);
+						}
+					}
+				}
+			}
+			for (int issueIndex = 0; issueIndex < activeBisectConfig.issues.size(); issueIndex++) {
+				var issue = activeBisectConfig.issues.get(issueIndex);
+				if (issue instanceof Issue.CrashIssue crashIssue) {
+					for (var knownStacktrace : crashIssue.stacktraces) {
+						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
+						if (MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.Always || (
+							MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.FirstLineMatch &&
+								cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])
+						)) {
+							try {
+								if (BisectPluginUi.openDialog(cleanKnownStacktrace, stacktrace)) {
+									crashIssue.stacktraces.add(stacktrace);
+									return Optional.of(issueIndex);
+								}
+							} catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
+									 IllegalAccessException e) {
+								throw new RuntimeException("Unable to open crash dialog", e);
+							}
+						}
+					}
+				}
+			}
+			activeBisectConfig.issues.add(new Issue.CrashIssue(stacktrace));
+			return Optional.of(activeBisectConfig.issues.size() - 1);
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	public static String removeStacktracePoison(String oldStacktrace) {
+		return oldStacktrace.replaceAll(":\\d+\\)", ")") // Line numbers
+							.replaceAll("\\.handler\\$[0-9a-z]{6}\\$", ".fuzzyMixinHandler\\$"); // Mixin
+	}
+
+	private static List<Integer> readSections(Path sectionsPath) throws IOException, InvalidCommunicationFileStateException {
 		if (Files.exists(sectionsPath)) {
 			var resultUnprocessed = Files.readAllLines(sectionsPath);
 			Files.delete(sectionsPath);
@@ -49,15 +113,19 @@ public class Bisect {
 			}
 			return result;
 		} else {
-			throw new RuntimeException("In bisect, but run was unable to read sections file");
+			throw new InvalidCommunicationFileStateException("sections file");
 		}
 	}
 
 	private static void copyLatestLog(String modSetHash) throws IOException {
 		var logFilePath = Path.of("logs", "latest.log");
 		if (Files.isRegularFile(logFilePath)) {
-			Files.createDirectories(Path.of("bisectLogStorage"));
-			Files.copy(logFilePath, Path.of("bisectLogStorage", modSetHash + ".log"), REPLACE_EXISTING);
+			Files.createDirectories(Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory));
+			Files.copy(
+				logFilePath,
+				Path.of(MainConfig.INSTANCE.bisectLogStorageDirectory, modSetHash + ".log"),
+				REPLACE_EXISTING
+			);
 		}
 	}
 
@@ -65,61 +133,61 @@ public class Bisect {
 		return BisectUtils.hash256(String.join(",", modSet));
 	}
 
-	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException {
+	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException, InvalidCommunicationFileStateException {
 		if (Files.exists(modSetPath)) {
 			var result = Files.readAllLines(modSetPath);
 			Files.delete(modSetPath);
 			return result;
 		} else {
-			throw new RuntimeException("In bisect, but run was unable to read mod set file");
+			throw new InvalidCommunicationFileStateException("mod set file");
 		}
 	}
 
-	public static void childBisect(QuiltPluginContext context) throws IOException, ParseMetadataException {
-		var activeBisect = ActiveBisectConfig.getInstance();
-		HashMap<String, Path> loadOptions = getModOptions();
-		activeBisect.updateFiles(loadOptions);
-		loadModSet(context, calculateModSet(activeBisect), loadOptions);
-		activeBisect.safe(false);
+	public static SectionList childBisect(List<ModLoadOption> loadOptions) throws IOException {
+		var activeBisect = ActiveBisectConfig.INSTANCE;
+		activeBisect.updateLoadOptions(loadOptions);
+		if (activeBisect.bisectSettings != null && activeBisect.bisectSettings.disableWorldSaving()) {
+			Path worldStorageLocation = Path.of("saves");
+			Path backupStorageLocation = Path.of(MainConfig.INSTANCE.bisectSavesBackupDirectory);
+
+			if (Files.exists(backupStorageLocation)) {
+				if (Files.isDirectory(backupStorageLocation)) {
+					// For every dir in backup:
+					try (Stream<Path> path = Files.list(backupStorageLocation)) {
+						for (var file : path.toList()) {
+							// Delete the corresponding world
+							deleteDirectory(worldStorageLocation.resolve(file.getFileName()));
+						}
+					}
+					copyDirectory(backupStorageLocation, worldStorageLocation);
+				} else {
+					throw new RuntimeException("Save backup is not a directory. please delete or rename it.");
+				}
+			}
+			copyDirectory(worldStorageLocation, backupStorageLocation);
+		}
+		activeBisect.safe();
+		return calculateModSet(activeBisect);
 	}
 
-	public static HashMap<String, Path> getModOptions() throws IOException, ParseMetadataException {
-		try (var files = Files.list(Path.of("modsToBisect"))) {
-			var result = new HashMap<String, Path>();
-			for (Iterator<Path> it = files.iterator(); it.hasNext(); ) {
-				Path file = it.next();
-				if (!Files.isRegularFile(file)) {
-					continue;
+	public static void deleteDirectory(Path dir) throws IOException {
+		if (Files.exists(dir)) {
+			try (Stream<Path> pathStream = Files.walk(dir)) {
+				for (Path path : (Iterable<? extends Path>) pathStream.sorted(Comparator.reverseOrder())::iterator) {
+					Files.deleteIfExists(path);
 				}
-				result.put(extractModId(file), file);
 			}
-			return result;
 		}
 	}
 
-	@SuppressWarnings("RedundantThrows") // Thrown in method invoked via reflection
-	private static String extractModId(Path it) throws IOException, ParseMetadataException {
-		try (var zip = new ZipInputStream(Files.newInputStream(it))) {
-			for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-				// I dont want to impl the mod id extraction by myself, so I'll let Quilt Loader internals do their job
-				if (entry.getName().equals("fabric.mod.json")) {
-					return ((net.fabricmc.loader.api.metadata.ModMetadata) QuiltLoader.class.getClassLoader().loadClass(
-						"org.quiltmc.loader.impl.fabric.metadata.FabricModMetadataReader").getMethod(
-						"parseMetadata",
-						InputStream.class
-					).invoke(null, zip)).getId();
-				} else if (entry.getName().equals("quilt.mod.json")) {
-					return ((ModMetadata) QuiltLoader.class.getClassLoader()
-														   .loadClass(
-															   "org.quiltmc.loader.impl.metadata.qmj.ModMetadataReader")
-														   .getMethod("read", InputStream.class)
-														   .invoke(null, zip)).id();
+	public static void copyDirectory(Path from, Path to) throws IOException {
+		try (Stream<Path> paths = Files.walk(from)) {
+			for (Path source : (Iterable<? extends Path>) paths::iterator) {
+				Path destination = to.resolve(from.relativize(source));
+				if (!Files.exists(destination)) {
+					Files.copy(source, destination);
 				}
 			}
-			throw new RuntimeException("Unknown mod type: " + it.getFileName());
-		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-				 InvocationTargetException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -283,44 +351,5 @@ public class Bisect {
 
 	private static boolean modSetExistsAndIsWorkingOrFixed(Optional<ModSet> modSet, ActiveBisectConfig activeBisect) {
 		return modSet.isPresent() && modSet.get().isWorkingOrFixed(activeBisect);
-	}
-
-	/**
-	 * @param mods MUST BE SORTED if more than one section exists
-	 */
-	public static void loadModSet(QuiltPluginContext context, SectionList mods, HashMap<String, Path> loadOptions) throws IOException {
-		var inBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of("Quilt Bisect - Loaded"));
-		var outOfBisectTreeNode = context.manager().getRootGuiNode().addChild(QuiltLoaderText.of(
-			"Quilt Bisect - Only loaded via dependency"));
-		for (Map.Entry<String, Path> modIdPathEntry : loadOptions.entrySet()) {
-			if (mods.modIds().contains(modIdPathEntry.getKey())) {
-				context.addFileToScan(
-					modIdPathEntry.getValue(),
-					inBisectTreeNode.addChild(QuiltLoaderText.of(modIdPathEntry.getValue().getFileName().toString())),
-					true
-				);
-			} else {
-				context.addFileToScan(
-					modIdPathEntry.getValue(),
-					outOfBisectTreeNode.addChild(QuiltLoaderText.of(modIdPathEntry.getValue()
-																				  .getFileName()
-																				  .toString())),
-					false
-				);
-			}
-		}
-
-		if (mods.sectionIndices().size() == 1) {
-			// Sorting is safe under these conditions
-			mods.modIds().sort(null);
-		} else {
-			// TODO Check that mods is sorted
-		}
-
-		Files.writeString(ActiveBisectConfig.configDirectory.resolve("modSet.txt"), String.join("\n", mods.modIds()));
-		Files.writeString(
-			ActiveBisectConfig.configDirectory.resolve("sections.txt"),
-			mods.sectionIndices().stream().map(Object::toString).collect(Collectors.joining("\n"))
-		);
 	}
 }

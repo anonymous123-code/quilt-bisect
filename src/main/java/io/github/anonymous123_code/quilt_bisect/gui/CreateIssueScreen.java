@@ -5,6 +5,7 @@ import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
 import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.GuiGraphics;
@@ -31,10 +32,11 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	protected static void saveAndQuit() {
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
 		try {
-			activeBisectConfig.safe(false);
-			Files.writeString(ActiveBisectConfig.configDirectory.resolve("issue.txt"),
+			activeBisectConfig.safe();
+			Files.writeString(
+				AbstractBisectConfig.configDirectory.resolve("issue.txt"),
 				Integer.toString(activeBisectConfig.issues.size() - 1)
 			);
 			GracefulTerminator.gracefullyTerminate(56);
@@ -56,12 +58,14 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 
 	protected void addIssueNameInput(int row) {
 		// Issue Name
-		addDrawableChild(new SpruceLabelWidget(centerVertically(row, 0, 10),
+		addDrawableChild(new SpruceLabelWidget(
+			centerVertically(row, 0, 10),
 			Text.translatable("gui.bisect.issue_name"),
 			CELL_WIDTH,
 			false
 		));
-		issueNameWidget = new SpruceTextFieldWidget(centerVertically(row, 1, 20),
+		issueNameWidget = new SpruceTextFieldWidget(
+			centerVertically(row, 1, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.issue_name")
@@ -70,16 +74,18 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	protected void addCancelContinueButtons(Text continueText) {
-		addDrawableChild(new SpruceButtonWidget(Position.of(width / 2 + 5, height - 28),
+		addDrawableChild(new SpruceButtonWidget(
+			Position.of(width / 2 + 5, height - 28),
 			ButtonWidget.DEFAULT_WIDTH,
 			20,
 			continueText,
 			button -> onDone()
 		));
-		addDrawableChild(new SpruceButtonWidget(Position.of(
+		addDrawableChild(new SpruceButtonWidget(
+			Position.of(
 				width / 2 - ButtonWidget.DEFAULT_WIDTH - 5,
-			height - 28
-		),
+				height - 28
+			),
 			ButtonWidget.DEFAULT_WIDTH,
 			20,
 			CommonTexts.CANCEL,
@@ -92,8 +98,8 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	protected void onDone() {
-		ActiveBisectConfig.update();
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
+		activeBisectConfig.update();
 		activeBisectConfig.issues.add(new Issue.UserIssue(issueNameWidget.getText()));
 		saveAndQuit();
 	}

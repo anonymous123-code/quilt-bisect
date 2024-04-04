@@ -32,7 +32,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 
 	@Override
 	public void onInitialize(ModContainer mod) {
-		var bisectConfig = ActiveBisectConfig.getInstance();
+		var bisectConfig = ActiveBisectConfig.INSTANCE;
 		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
 				if (!(screen instanceof BisectSummaryScreen || screen instanceof CreateIssueScreen || screen instanceof SelectIssueScreen || screen instanceof StartBisectScreen)) {
@@ -78,9 +78,9 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 			long currentTime = System.currentTimeMillis();
 			long deltaTime = currentTime - joinedTimestamp;
 			long deltaTimeTicks = deltaTime / 50; // 50ms per tick
-			if (deltaTimeTicks > ActiveBisectConfig.getInstance().bisectSettings.autoAcceptTime()) {
+			if (deltaTimeTicks > ActiveBisectConfig.INSTANCE.bisectSettings.autoAcceptTime()) {
 				IntegratedServer server = client.getServer();
-				if (server == null || server.getTicks() > ActiveBisectConfig.getInstance().bisectSettings.autoAcceptTime()) { // If a server exists, both the server must have ticked for the autoAcceptTime, and the client must have been in the world for long enough
+				if (server == null || server.getTicks() > ActiveBisectConfig.INSTANCE.bisectSettings.autoAcceptTime()) { // If a server exists, both the server must have ticked for the autoAcceptTime, and the client must have been in the world for long enough
 					markAsWorkingAndShutdown();
 				}
 			}

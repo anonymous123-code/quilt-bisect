@@ -4,6 +4,7 @@ import dev.lambdaurora.spruceui.Position;
 import dev.lambdaurora.spruceui.screen.SpruceScreen;
 import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.MinecraftClient;
@@ -33,7 +34,7 @@ public class SelectIssueScreen extends SpruceScreen {
 	protected void init() {
 		super.init();
 		this.issueList = new IssueList(MinecraftClient.getInstance());
-        ArrayList<Issue> issues = ActiveBisectConfig.getInstance().issues;
+        ArrayList<Issue> issues = ActiveBisectConfig.INSTANCE.issues;
         for (int id = 0; id < issues.size(); id++) {
             Issue issue = issues.get(id);
 			if (issue instanceof Issue.NamedIssue namedIssue) {
@@ -62,9 +63,9 @@ public class SelectIssueScreen extends SpruceScreen {
 
 	private void onDone() {
         try {
-            Files.writeString(ActiveBisectConfig.configDirectory.resolve("issue.txt"), Integer.toString(issueList.getSelectedOrNull().id));
+            Files.writeString(AbstractBisectConfig.configDirectory.resolve("issue.txt"), Integer.toString(issueList.getSelectedOrNull().id));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to write issue comm file", e);
         }
         GracefulTerminator.gracefullyTerminate(56);
 	}

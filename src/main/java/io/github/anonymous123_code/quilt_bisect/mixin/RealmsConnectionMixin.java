@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.realms.RealmsConnection;
@@ -19,9 +19,9 @@ public class RealmsConnectionMixin {
 	@Inject(method = "connect", at = @At("HEAD"))
 	public void updateAutoJoinData(RealmsServer server, ServerAddress address, CallbackInfo ci) {
 		try {
-			Files.writeString(ActiveBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.Realm + "\n" + server.id);
+			Files.writeString(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.Realm + "\n" + server.id);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Failed to write last join comm file", e);
 		}
 	}
 }

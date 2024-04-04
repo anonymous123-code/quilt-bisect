@@ -14,8 +14,8 @@ public class ClientMainMixin {
 
 	@ModifyArg(method = "main", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;<init>(Lnet/minecraft/client/RunArgs;)V"))
 	private static RunArgs useQuickPlayFeatureToAutoJoin(RunArgs args) {
-		ActiveBisectConfig.update();
-		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.getInstance();
+		ActiveBisectConfig activeBisectConfig = ActiveBisectConfig.INSTANCE;
+		activeBisectConfig.update();
 
 		if (activeBisectConfig.isActive()) {
 			String singleplayer = args.quickPlay.singleplayer();

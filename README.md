@@ -5,14 +5,21 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
 ## Usage
 
 - This project uses Loader Plugins, `-Dloader.experimental.allow_loading_plugins=true` needs to be added to your JVM arguments.
-- Move the mods you want to test into a directory called `modsToBisect` in your minecraft folder
+- Put this mod into your mods folder
 - If your game crashes, a dialog will open asking if you want to bisect, else click the start bisect button at the top of your screen, and you will be prompted to give your issue a name. 
 - The game will automatically restart. Try to reproduce the issues you had before.
   - If everything is fine, click the `No Issue` button
   - If you have an issue click the `Manual Issue` button, and select the issue you are having or create a new one
     - Note that it is recommended to keep the number of issues in one bisect down, and instead run multiple bisects with previous fixes applied. See [Bisecting multiple issues at once](#bisecting-multiple-issues-at-once)
-- (untested) once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
+- once an issue is isolated, bisect will verify the solution(s) and continue bisecting the other issues
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
+
+### Configuring
+The file `<config>/quilt_bisect/main.json` contains most things a user may want to configure, see [MainConfig.java](/src/main/java/io/github/anonymous123_code/quilt_bisect/shared/MainConfig.java) for now.
+
+The file `<config>/quilt_bisect/active_bisect.json` contains information about the active bisect, including the settings, all tried mod sets and their respective log, and issue information.
+
+The files `<config>/quilt_bisect/modSet.txt`, `<config>/quilt_bisect/sections.txt`, and `<config>/quilt_bisect/lastActiveJoin.txt` contain internal information and shouldn't be modified.
 
 ## How does it work
 ### Bisecting multiple issues at once
@@ -29,8 +36,9 @@ When starting a new bisect, you can configure bisect to
   - The time is in 1/20 seconds, and will start on world join if auto join is active, else when the title screen shows. If in single player, it will also wait for enough ticks to pass
 - automatically run commands or sending chat messages after auto joining.
   - It will be treated as if you sent them from chat, and also work with client side commands
-- disable world saving (TODO)
-  - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active
+- disable world saving
+  - This is to help reproduction of issues where the state of the world is relevant. No single player world will be changed after a relaunch if this is active. It also allows for testing content mods
+  - For maximum compatibility it is currently implemented by making a backup of the worlds folder and resetting the worlds that have been backed up to the stored state before launch if active
 
 ### Handling crashes
 Being a loader plugin, bisect hooks into the Quilt's loader process at an incredibly early stage.
@@ -65,7 +73,7 @@ Ideally, a bisect method would be aware of dependencies and bisect based on thos
 However, this would immensely inflate the complexity of the algorithm, and this project is complex enough right now.
 
 Instead, Quilt Bisect simply ignores dependency in its search algorithm and provides all mods to quilt loader.
-However, it only force-loads mods in the mod set (this is what happens to mods in your mods folder) and provides the other mods as optional mods which are loaded when a dependency requires it.
+However, it only force-loads mods in the mod set (this is what happens to mods in your mods folder) and provides the other mods as optional mods which are only loaded when a dependency requires it.
 While solving the dependency issue, it has a few implications:
 - If required, a mod not in the mod set still can be loaded
 - This means that it can happen that when bisect identifies a minimal reproduction, that reproduction set actually only includes a mod which depends on the real culprit
