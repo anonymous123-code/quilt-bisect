@@ -24,16 +24,14 @@ public class Bisect {
 		List<String> modSet = readModSet(modset_path);
 		List<Integer> sections = readSections(sections_path);
 
-
-		String modSetHash = generateModSetHash(modSet);
-		copyLatestLog(modSetHash);
 		var active_bisect = ActiveBisectConfig.INSTANCE;
-		processRun(modSet, sections, modSetHash, crashLog, crashLogPath, active_bisect);
+		var lastRunModSet = createLastRunModSet(modSet, sections, crashLog, crashLogPath, active_bisect);
+		copyLatestLog(lastRunModSet.id);
 		active_bisect.safe();
 	}
 
 
-	public static void processRun(List<String> modIdSet, List<Integer> sections, String modSetHash, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
+	public static ModSet createLastRunModSet(List<String> modIdSet, List<Integer> sections, @Nullable String crashLog, @Nullable String crashLogPath, ActiveBisectConfig activeBisectConfig) throws StacktraceExtractionFailException {
 		Optional<Integer> issue = getOrAddIssue(crashLog, activeBisectConfig);
 		ModSet modSet = issue.isPresent() ? new ModSet.Erroring(
 			new ArrayList<>(modIdSet),
@@ -41,7 +39,8 @@ public class Bisect {
 			crashLogPath != null ? crashLogPath : "",
 			new ArrayList<>(sections)
 		) : new ModSet.Working(new ArrayList<>(modIdSet), new ArrayList<>(sections));
-		activeBisectConfig.modSets.put(modSetHash, modSet);
+		activeBisectConfig.addAndValidateModSet(modSet);
+		return modSet;
 	}
 
 
@@ -74,10 +73,8 @@ public class Bisect {
 				if (issue instanceof Issue.CrashIssue crashIssue) {
 					for (var knownStacktrace : crashIssue.stacktraces) {
 						String cleanKnownStacktrace = removeStacktracePoison(knownStacktrace);
-						if (MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.Always || (
-							MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.FirstLineMatch &&
-								cleanKnownStacktrace.split("\n")[0].equals(stacktrace.split("\n")[0])
-						)) {
+						if (MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.Always || (MainConfig.INSTANCE.showDiffWhenNoExactMatchFound == MainConfig.ShowDiffOptions.FirstLineMatch && cleanKnownStacktrace.split(
+							"\n")[0].equals(stacktrace.split("\n")[0]))) {
 							try {
 								if (BisectPluginUi.openDialog(cleanKnownStacktrace, stacktrace)) {
 									crashIssue.stacktraces.add(stacktrace);
@@ -127,10 +124,6 @@ public class Bisect {
 				REPLACE_EXISTING
 			);
 		}
-	}
-
-	private static String generateModSetHash(List<String> modSet) throws NoSuchAlgorithmException {
-		return BisectUtils.hash256(String.join(",", modSet));
 	}
 
 	private static @NotNull List<String> readModSet(Path modSetPath) throws IOException, InvalidCommunicationFileStateException {
@@ -224,8 +217,7 @@ public class Bisect {
 			}
 
 			Set<String> smallestFix = fixes.stream().min(Comparator.comparingInt(Set::size)).orElse(Set.of());
-			ModSet largestModSet = activeBisect.modSets.values()
-													   .stream()
+			ModSet largestModSet = activeBisect.modSets.stream()
 													   .max(Comparator.comparingInt(modSet1 -> modSet1.modSet.size()))
 													   .orElse(new ModSet.Working(
 														   new ArrayList<>(),
@@ -265,8 +257,7 @@ public class Bisect {
 			Issue testedIssue = activeBisect.issues.get(fixedIssueId);
 			ArrayList<ArrayList<String>> reproductions = testedIssue.fix.reproductions;
 
-			List<ModSet> issueModSets = activeBisect.modSets.values()
-															.stream()
+			List<ModSet> issueModSets = activeBisect.modSets.stream()
 															.filter(it -> it instanceof ModSet.Erroring erroring && erroring.issueId == fixedIssueId)
 															.toList();
 			// All mod sets of the issue that are not contained by any other mod set with the issue
@@ -290,10 +281,8 @@ public class Bisect {
 	}
 
 	private static Optional<SectionList> testAllFixes(Set<Set<String>> fixes, ActiveBisectConfig activeBisectConfig) {
-		List<ModSet> largestModSets = activeBisectConfig.modSets.values()
-																.stream()
-																.filter(it -> activeBisectConfig.modSets.values()
-																										.stream()
+		List<ModSet> largestModSets = activeBisectConfig.modSets.stream()
+																.filter(it -> activeBisectConfig.modSets.stream()
 																										.noneMatch(other -> other != it && other.modSet.containsAll(
 																											it.modSet)))
 																.toList();

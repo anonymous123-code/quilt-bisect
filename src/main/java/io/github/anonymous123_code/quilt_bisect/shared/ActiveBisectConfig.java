@@ -14,10 +14,12 @@ import java.util.Optional;
 
 public class ActiveBisectConfig extends AbstractBisectConfig {
 	public static final ActiveBisectConfig INSTANCE = create(ActiveBisectConfig.class);
-	public final HashMap<String, ModSet> modSets = new HashMap<>();
+
+	public final ArrayList<ModSet> modSets = new ArrayList<>();
 	public final ArrayList<Issue> issues = new ArrayList<>();
 	public final HashMap<String, String> modIdToFile = new HashMap<>();
 	public AutoTest bisectSettings = null;
+
 	private ActiveBisectConfig() {
 		super("active_bisect");
 	}
@@ -65,7 +67,7 @@ public class ActiveBisectConfig extends AbstractBisectConfig {
 									 .toString(); // TODO Figure out how to get the hash. For now use the file name
 			if (modIdToFile.containsKey(loadOption.id())) {
 				if (!modIdToFile.get(loadOption.id()).equals(fileName)) {
-					for (var modSet : modSets.values()) {
+					for (var modSet : modSets) {
 						if (modSet.modSet.contains(loadOption.id())) {
 							modSet.invalidated = true;
 						}
@@ -79,7 +81,7 @@ public class ActiveBisectConfig extends AbstractBisectConfig {
 	}
 
 	public Optional<ModSet> getFirstInvalidatedModSet() {
-		for (ModSet modSet : modSets.values()) {
+		for (ModSet modSet : modSets) {
 			if (modSet.invalidated) {
 				return Optional.of(modSet);
 			}
@@ -97,13 +99,13 @@ public class ActiveBisectConfig extends AbstractBisectConfig {
 
 	public Optional<ModSet> getModSet(List<String> modIds) {
 		Collections.sort(modIds);
-		return modSets.values().stream().filter(it -> modIds.equals(it.modSet)).findAny();
+		return modSets.stream().filter(it -> modIds.equals(it.modSet)).findAny();
 	}
 
 	public ModSet.Erroring findSmallestUnfixedModSet() {
 		ModSet.Erroring smallest = null;
 		int smallestSize = Integer.MAX_VALUE;
-		for (var set : modSets.values()) {
+		for (var set : modSets) {
 			if (set.isWorkingOrFixed(this)) {
 				continue;
 			}
@@ -119,7 +121,7 @@ public class ActiveBisectConfig extends AbstractBisectConfig {
 		var result = new ArrayList<Integer>();
 		ISSUES:
 		for (int i = 0; i < issues.size(); i++) {
-			for (ModSet modSet : modSets.values()) {
+			for (ModSet modSet : modSets) {
 				if (modSet instanceof ModSet.Erroring erroring && erroring.issueId == i) {
 					if (!modSet.isWorkingOrFixed(this)) {
 						continue ISSUES;
@@ -129,5 +131,15 @@ public class ActiveBisectConfig extends AbstractBisectConfig {
 			result.add(i);
 		}
 		return result;
+	}
+
+	public void addAndValidateModSet(ModSet modSetToAdd) {
+		for (int i = 0; i < modSets.size(); i++) {
+			ModSet modSet = modSets.get(i);
+			if (modSet.id.equals(modSetToAdd.id)) {
+				modSets.set(i, modSetToAdd.copyWithSections(modSet.sections));
+			}
+		}
+		modSets.add(modSetToAdd);
 	}
 }

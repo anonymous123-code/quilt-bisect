@@ -9,7 +9,9 @@ import java.util.List;
 
 public record SectionList(List<String> modIds, List<Integer> sectionIndices) {
 	public static SectionList fromSections(List<ModSet.Section> sections) {
-		sections.sort(Comparator.comparingInt(ModSet.Section::start));
+		if (sections.size() > 1) {
+			sections.sort(Comparator.comparingInt(ModSet.Section::start));
+		}
 
 		var sectionIndices = new ArrayList<Integer>(sections.size());
 		sectionIndices.add(0);

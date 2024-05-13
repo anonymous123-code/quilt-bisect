@@ -12,6 +12,7 @@ import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.String.join;
@@ -39,13 +40,15 @@ public class BisectSummaryScreen extends SpruceScreen {
 			} else if (issue instanceof Issue.UserIssue userIssue) {
 				sb.append("  - ").append(userIssue.name).append("\n");
 			}
-			sb.append("    Reproductions:\n");
-			for (ArrayList<String> reproduction : issue.fix.reproductions) {
-				sb.append("      - ").append(join(", ", reproduction)).append("\n");
-			}
+
+//			sb.append("    Reproductions:\n");
+//			for (ArrayList<String> reproduction : issue.fix.reproductions) {
+//				sb.append("      - ").append(join(", ", reproduction)).append("\n");
+//			}
+
 			sb.append("    Fixes:\n");
 			for (Set<String> fix: BisectUtils.mergeReproductions(issue.fix.reproductions)) {
-				sb.append("      - Remove all of ").append(join(", ", fix)).append("\n");
+				sb.append("      - Remove ").append(niceConcat(fix.stream().toList())).append("\n");
 			}
 		}
 
@@ -56,6 +59,15 @@ public class BisectSummaryScreen extends SpruceScreen {
 		this.addDrawableChild(
 			new SpruceButtonWidget(Position.of(this.width / 2 - 100, this.height - 38), 200, 20, CommonTexts.DONE, button -> this.closeScreen())
 		);
+	}
+
+	public String niceConcat(List<String> fix) {
+		var first = join(", ", fix.subList(1, fix.size()));
+		if (!first.isEmpty()) {
+			return first + " and " + fix.get(0);
+		} else {
+			return fix.get(0);
+		}
 	}
 
 	@Override
