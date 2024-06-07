@@ -8,6 +8,8 @@ import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
+import io.github.anonymous123_code.quilt_bisect.shared.ReflectiveRemovedContainerStoreImpl;
+import io.github.anonymous123_code.quilt_bisect.shared.RemovedModContainerStore;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Text;
@@ -17,6 +19,7 @@ import java.util.Set;
 
 public class BisectSummaryScreen extends SpruceScreen {
 	public final IconStore iconStore = new IconStore();
+	public RemovedModContainerStore removedModContainerStore;
 
 	public BisectSummaryScreen() {
 		super(Text.of("Bisect summary"));
@@ -25,6 +28,8 @@ public class BisectSummaryScreen extends SpruceScreen {
 
 	@Override
 	protected void init() {
+		removedModContainerStore = ReflectiveRemovedContainerStoreImpl.obtainPluginInstance();
+		removedModContainerStore.finishLoading();
 		super.init();
 		var oldBisect = ActiveBisectConfig.INSTANCE;
 		int x = this.width / 2 - 155;
@@ -92,9 +97,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 		for (int i = 0; i < array.length; i++) {
 			String modId = array[i];
 			QuiltBisect.LOGGER.info(modId);
-			// TODO: Handle removed mod load options, they get no mod container by default. (Currently displays quilt bisect)
-			var modContainer = QuiltLoader.getModContainer(modId).orElse(QuiltLoader.getModContainer(QuiltBisect.MOD_ID)
-																					.orElseThrow());
+			var modContainer = QuiltLoader.getModContainer(modId).orElseGet(() -> removedModContainerStore.getRemovedMods(modId).get(0));
 			var widget = new ModWidget(currentX, y, modContainer, iconStore);
 			if (currentWidth + widget.getWidth() > maxWidth) {
 				currentWidth = 0;

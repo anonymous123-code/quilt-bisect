@@ -72,9 +72,7 @@ public class IconStore implements Closeable {
 			iconSourceId = QuiltBisect.MOD_ID;
 			iconPath = "assets/" + QuiltBisect.MOD_ID + "/java_icon.png";
 		}
-		final String finalIconSourceId = iconSourceId;
-		ModContainer iconSource = QuiltLoader.getModContainer(iconSourceId).orElseThrow(() -> new RuntimeException(
-			"Cannot get ModContainer for Fabric mod with id " + finalIconSourceId));
+		ModContainer iconSource = QuiltLoader.getModContainer(iconSourceId).orElse(container);
 		NativeImageBackedTexture icon = this.createIcon(iconSource, iconPath);
 		if (icon == null) {
 			LOGGER.warn("Warning! Mod {} has a broken icon, loading default icon", container.metadata().id());
