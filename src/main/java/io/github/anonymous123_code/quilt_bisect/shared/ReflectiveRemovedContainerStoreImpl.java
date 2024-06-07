@@ -33,9 +33,7 @@ public class ReflectiveRemovedContainerStoreImpl implements RemovedModContainerS
 		// Then we can retrieve the new container, which carries over the metadata, and thus the RemovedModContainer store.
 		// However, that is still not of the same class as if we would load it on this class loader. In order to circumvent that we wrap all methods with reflection.
 		try {
-			var javaMetadata = (QuiltLoader.getModContainer("java")
-										   .orElseThrow()
-										   .metadata());
+			var javaMetadata = (QuiltLoader.getModContainer("java").orElseThrow().metadata());
 			var javaClass = javaMetadata.getClass();
 			return new ReflectiveRemovedContainerStoreImpl(javaClass.getMethod("getRemovedModContainerStore")
 																	.invoke(javaMetadata));
