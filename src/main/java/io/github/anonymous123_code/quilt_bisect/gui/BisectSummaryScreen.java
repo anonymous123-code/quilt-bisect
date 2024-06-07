@@ -3,21 +3,21 @@ package io.github.anonymous123_code.quilt_bisect.gui;
 import dev.lambdaurora.spruceui.Position;
 import dev.lambdaurora.spruceui.screen.SpruceScreen;
 import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
-import dev.lambdaurora.spruceui.widget.text.SpruceTextAreaWidget;
+import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
+import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Text;
+import org.quiltmc.loader.api.QuiltLoader;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-import static java.lang.String.join;
-
 public class BisectSummaryScreen extends SpruceScreen {
+	public final IconStore iconStore = new IconStore();
+
 	public BisectSummaryScreen() {
 		super(Text.of("Bisect summary"));
 	}
@@ -27,51 +27,96 @@ public class BisectSummaryScreen extends SpruceScreen {
 	protected void init() {
 		super.init();
 		var oldBisect = ActiveBisectConfig.INSTANCE;
-		StringBuilder sb = new StringBuilder();
-		sb.append("List of Reproduction cases for Issues:\n"); // TODO this looks  horrible, pls fix
+		int x = this.width / 2 - 155;
+		int y = 40;
 		int crashIndex = 1;
 		for (Issue issue : oldBisect.issues) {
-			if (issue instanceof Issue.CrashIssue crashIssue) {
-				sb.append("  - Crash ").append(crashIndex).append(":").append("\n");
-				sb.append("    Error: ").append(crashIssue.stacktraces.get(0).split("\n", 2)[0]).append("\n");
+			if (issue instanceof Issue.CrashIssue) {
+				y = draw_issue(
+					x,
+					y,
+					310,
+					Text.of("Crash " + crashIndex)
+						.copy()
+						.append("\n" + ((Issue.CrashIssue) issue).stacktraces.get(0).split("\n", 2)[0]),
+					issue
+				);
 				crashIndex++;
-			} else if (issue instanceof Issue.LogIssue logIssue) {
-				sb.append("  - ").append(logIssue.name).append("\n");
-			} else if (issue instanceof Issue.UserIssue userIssue) {
-				sb.append("  - ").append(userIssue.name).append("\n");
-			}
-
-//			sb.append("    Reproductions:\n");
-//			for (ArrayList<String> reproduction : issue.fix.reproductions) {
-//				sb.append("      - ").append(join(", ", reproduction)).append("\n");
-//			}
-
-			sb.append("    Fixes:\n");
-			for (Set<String> fix: BisectUtils.mergeReproductions(issue.fix.reproductions)) {
-				sb.append("      - Remove ").append(niceConcat(fix.stream().toList())).append("\n");
+			} else if (issue instanceof Issue.NamedIssue logIssue) {
+				y = draw_issue(x, y, 310, Text.of(logIssue.getName()), issue);
 			}
 		}
-
-		var widget = new SpruceTextAreaWidget(Position.of(this.width/2-155, 40), 310, this.height - 96, this.title);
-		widget.setText(sb.toString());
-		widget.setEditable(false);
-		addDrawableChild(widget);
-		this.addDrawableChild(
-			new SpruceButtonWidget(Position.of(this.width / 2 - 100, this.height - 38), 200, 20, CommonTexts.DONE, button -> this.closeScreen())
-		);
+		this.addDrawableChild(new SpruceButtonWidget(
+			Position.of(this.width / 2 - 100, this.height - 38),
+			200,
+			20,
+			CommonTexts.DONE,
+			button -> this.closeScreen()
+		));
 	}
 
-	public String niceConcat(List<String> fix) {
-		var first = join(", ", fix.subList(1, fix.size()));
-		if (!first.isEmpty()) {
-			return first + " and " + fix.get(0);
-		} else {
-			return fix.get(0);
-		}
+	@Override
+	public void closeScreen() {
+		super.closeScreen();
+		this.iconStore.close();
 	}
 
 	@Override
 	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
 		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
+	}
+
+	int draw_issue(int x, int y, int maxWidth, Text header, Issue issue) {
+		var headerLabel = new SpruceLabelWidget(Position.of(x, y), header, maxWidth);
+		this.addDrawableChild(headerLabel);
+		y += headerLabel.getHeight();
+		var fixesLabel = new SpruceLabelWidget(Position.of(x, y), Text.of("Fixes:"), maxWidth);
+		y += fixesLabel.getHeight();
+		this.addDrawableChild(fixesLabel);
+		for (Set<String> fix : BisectUtils.mergeReproductions(issue.fix.reproductions)) {
+			y = draw_fix(x, y, maxWidth, fix);
+		}
+		return y;
+	}
+
+	int draw_fix(int x, int y, int maxWidth, Set<String> fix) {
+		var fixStart = new SpruceLabelWidget(Position.of(x, y), Text.of("- Remove "), maxWidth);
+		x += fixStart.getWidth();
+		maxWidth -= fixStart.getWidth();
+		this.addDrawableChild(fixStart);
+
+		int currentX = x;
+		int currentWidth = 0;
+
+		String[] array = fix.toArray(new String[0]);
+		for (int i = 0; i < array.length; i++) {
+			String modId = array[i];
+			QuiltBisect.LOGGER.info(modId);
+			// TODO: Handle removed mod load options, they get no mod container by default. (Currently displays quilt bisect)
+			var modContainer = QuiltLoader.getModContainer(modId).orElse(QuiltLoader.getModContainer(QuiltBisect.MOD_ID)
+																					.orElseThrow());
+			var widget = new ModWidget(currentX, y, modContainer, iconStore);
+			if (currentWidth + widget.getWidth() > maxWidth) {
+				currentWidth = 0;
+				currentX = x + 10;
+				y += ModWidget.height();
+				widget.setX(currentX);
+				widget.setY(y);
+			}
+			currentWidth += widget.getWidth();
+			currentX += widget.getWidth() + 2;
+			if (i < array.length - 2) {
+				var commaLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.of(", "), maxWidth);
+				currentX += commaLabel.getWidth();
+				this.addDrawableChild(commaLabel);
+			} else if (i == array.length - 2) {
+				var andLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.of(" and "), maxWidth);
+				currentX += andLabel.getWidth();
+				this.addDrawableChild(andLabel);
+			}
+			this.addSelectableChild(widget);
+		}
+		y += ModWidget.height();
+		return y;
 	}
 }

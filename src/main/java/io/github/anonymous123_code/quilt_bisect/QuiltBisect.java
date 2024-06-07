@@ -25,6 +25,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 	// Gets set to false on world join if autoJoinType != None, else on title screen load
 	public static boolean firstTimeInAutoJoinScope = true;
 	public static long joinedTimestamp = -1;
+	public static String MOD_ID;
 
 	public static void markAsWorkingAndShutdown() {
 		GracefulTerminator.gracefullyTerminate(56);
@@ -32,6 +33,8 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 
 	@Override
 	public void onInitialize(ModContainer mod) {
+		MOD_ID = mod.metadata().id();
+		
 		var bisectConfig = ActiveBisectConfig.INSTANCE;
 		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
@@ -69,7 +72,8 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 		if (!"true".equals(System.getProperty("quiltBisect.active"))) {
 			throw new RuntimeException("Failed to load loader plugin: Something went very long");
 		}
-		LOGGER.info("Successfully battled quilt loader demons, bisect is alive! Cursed stuff may happen, make sure to test the errors you found without bisect before reporting them. (Bisect can't include itself in search)");
+		LOGGER.info(
+			"Successfully battled quilt loader demons, bisect is alive! Cursed stuff may happen, make sure to test the errors you found without bisect before reporting them. (Bisect can't include itself in search)");
 	}
 
 	@Override
