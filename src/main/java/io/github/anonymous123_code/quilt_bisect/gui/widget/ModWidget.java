@@ -37,13 +37,13 @@ public class ModWidget extends ClickableWidget {
 	public final IconStore iconStore;
 	private final ClickBehaviorHolder clickBehaviorHolder;
 	private final ModContainer mod;
-	protected Identifier iconLocation;
 	@Nullable
 	private final String homepage;
 	@Nullable
 	private final String issues;
 	@Nullable
 	private final String sources;
+	protected Identifier iconLocation;
 
 	public ModWidget(int x, int y, ClickBehaviorHolder clickBehaviorHolder, ModContainer mod, IconStore iconStore) {
 		super(x, y, height(), height(), Text.of(mod.metadata().name()));
@@ -131,23 +131,29 @@ public class ModWidget extends ClickableWidget {
 	}
 
 	private Tooltip buildTooltip() {
-		return Tooltip.create(Text.of(mod.metadata().name() + "\n")
-								  .copy()
-								  .append(Text.of(mod.metadata().id() + "\n")
-											  .setStyle(MOD_ID_STYLE)
-											  .get(0))
-								  .append(Text.of(mod.metadata().description() + "\n\n")
-											  .setStyle(DESCRIPTION_STYLE)
-											  .get(0))
-								  .append(Text.of(homepage + "\n"))
-								  .append(Text.of(issues + "\n"))
-								  .append(Text.of(sources + "\n\n"))
-								  .append(Text.of(mod.getSourcePaths()
-													 .stream()
-													 .map(ModWidget::preparePath)
-													 .collect(Collectors.joining("\n\n")))
-											  .setStyle(PATH_STYLE)
-											  .get(0)));
+		var text = Text.of(mod.metadata().name() + "\n").copy()
+					   .append(Text.of(mod.metadata().id() + "\n")
+								   .setStyle(MOD_ID_STYLE)
+								   .get(0)).append(Text.of(mod.metadata()
+															  .description() + "\n\n")
+													   .setStyle(
+														   DESCRIPTION_STYLE)
+													   .get(0));
+		if (homepage != null) {
+			text.append(Text.of(homepage + "\n"));
+		}
+		if (issues != null) {
+			text.append(Text.of(issues + "\n"));
+		}
+		if (sources != null) {
+			text.append(Text.of(sources + "\n\n"));
+		}
+		text.append(Text.of(mod.getSourcePaths()
+							   .stream()
+							   .map(ModWidget::preparePath)
+							   .collect(Collectors.joining("\n\n"))).setStyle(PATH_STYLE).get(0));
+		return Tooltip.create(text);
+
 	}
 
 	@Override
@@ -156,13 +162,37 @@ public class ModWidget extends ClickableWidget {
 			case CopyId -> copy(mod.metadata().id());
 			case CopyName -> copy(mod.metadata().name());
 			case CopyPath -> copy(mod.getSourcePaths().get(0).get(0).toString());
-			case CopyIssues -> copy(issues);
-			case CopySources -> copy(sources);
-			case CopyHomepage -> copy(homepage);
+			case CopyIssues -> {
+				if (issues != null) {
+					copy(issues);
+				}
+			}
+			case CopySources -> {
+				if (sources != null) {
+					copy(sources);
+				}
+			}
+			case CopyHomepage -> {
+				if (homepage != null) {
+					copy(homepage);
+				}
+			}
 			case OpenPath -> openFile(mod.getSourcePaths().get(0).get(0));
-			case OpenIssues -> openUrl(issues);
-			case OpenHomepage -> openUrl(homepage);
-			case OpenSources -> openUrl(sources);
+			case OpenIssues -> {
+				if (issues != null) {
+					openUrl(issues);
+				}
+			}
+			case OpenHomepage -> {
+				if (homepage != null) {
+					openUrl(homepage);
+				}
+			}
+			case OpenSources -> {
+				if (sources != null) {
+					openUrl(sources);
+				}
+			}
 		}
 	}
 
