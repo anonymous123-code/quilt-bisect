@@ -16,6 +16,7 @@ public abstract sealed class PluginLogHandler {
 	public abstract void warn(String msg);
 	public abstract void warn(String msg, Throwable e);
 	public abstract void error(String msg, Throwable e);
+	public abstract void error(String msg);
 	public void shutdown() {}
 
 	static {
@@ -27,6 +28,7 @@ public abstract sealed class PluginLogHandler {
 		}
 		INSTANCE = inst;
 	}
+
 
 	private static final class Log4j extends PluginLogHandler {
 		private final Logger LOGGER = LogManager.getLogger("QuiltBisectPlugin");
@@ -49,6 +51,11 @@ public abstract sealed class PluginLogHandler {
 		@Override
 		public void error(String msg, Throwable e) {
 			LOGGER.error(msg, e);
+		}
+
+		@Override
+		public void error(String msg) {
+			LOGGER.error(msg);
 		}
 
 		@Override
@@ -76,6 +83,11 @@ public abstract sealed class PluginLogHandler {
 		@Override
 		public void error(String msg, Throwable e) {
 			System.out.println("[QuiltBisectPlugin/ERROR] " + msg + ": " + e);
+		}
+
+		@Override
+		public void error(String msg) {
+			System.out.println("[QuiltBisectPlugin/ERROR] " + msg);
 		}
 	}
 }

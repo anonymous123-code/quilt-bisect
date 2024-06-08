@@ -14,6 +14,7 @@ import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
 import org.quiltmc.loader.api.plugin.QuiltPluginContext;
 import org.quiltmc.loader.api.plugin.gui.PluginGuiTreeNode;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
+import org.quiltmc.loader.api.plugin.solver.ModSolveResult;
 import org.quiltmc.loader.impl.plugin.quilt.ProvidedModOption;
 
 import javax.swing.*;
@@ -177,6 +178,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	@Override
 	public void beforeSolve() {
+		smuggleRemovedModContainerStore(context);
 		LOGGER.info("Discovering mods...");
 		ArrayList<ModLoadOption> loadOptions = new ArrayList<>();
 		Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap = new HashMap<>();
@@ -238,6 +240,29 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		}
 	}
 
+	private void smuggleRemovedModContainerStore(QuiltPluginContext context) {
+		// See ReflectiveRemovedModContainerStore
+		var javaLoadOption = context.manager().getAllMods("java").iterator().next();
+		var javaClassLoader = javaLoadOption.getClass().getClassLoader();
+		try {
+			var internalModOptionBaseClass = javaClassLoader.loadClass("org.quiltmc.loader.impl.plugin.base.InternalModOptionBase");
+			if (internalModOptionBaseClass.isAssignableFrom(javaLoadOption.getClass())) {
+				var field = internalModOptionBaseClass.getDeclaredField("metadata");
+				field.setAccessible(true);
+				field.set(javaLoadOption, new SmuggleModMetadataExt(javaLoadOption.metadata(), RemovedModContainerStoreImpl.getInstance()));
+			} else {
+				throw new RuntimeException("Java load option class doesnt seem to be a InternalModLoadOptionBase");
+			}
+		} catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public void finish(ModSolveResult result) {
+		LOGGER.error("LoaderPlugin.finish was called. This is not expected. It is likely that Quilt Bisect is out of date with quilt loader");
+	}
+
 	public @Nullable ModLoadOption findParentLoadOption(ModLoadOption loadOption, Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap) {
 		var parent = context.manager().getGuiNode(loadOption).parent();
 		while (parent != null) {
@@ -260,6 +285,7 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 				makeOptional(jij, nestedLoadOption, modNode);
 			}
 		}
+		RemovedModContainerStoreImpl.getInstance().addRemovedMod(loadOption);
 		context.ruleContext().removeOption(loadOption);
 		context.manager()
 			   .getGuiNode(loadOption)

@@ -19,5 +19,22 @@
   "gui.bisect.start.auto_accept.time": "Time to wait before marking as working (ticks or 1/20 seconds)",
   "gui.bisect.start.auto_accept.time.tooltip": "Time to wait before marking as working (ticks or 1/20 seconds)",
   "gui.bisect.start.command.label": "Chat messages/commands to execute after join:",
-  "gui.bisect.start.command.input": "Input commands to run on auto join"
+  "gui.bisect.start.command.input": "Input commands to run on auto join",
+  "gui.bisect.summary": "Bisect Summary",
+  "gui.bisect.mod.click": "On Mod Click",
+  "gui.bisect.summary.crash.name": "Crash %s",
+  "gui.bisect.summary.fixes": "Possible Fixes:",
+  "gui.bisect.mod.copy.name": "Copy Name",
+  "gui.bisect.mod.copy.id": "Copy Id",
+  "gui.bisect.mod.copy.homepage": "Copy Homepage URL",
+  "gui.bisect.mod.copy.sources": "Copy Sources URL",
+  "gui.bisect.mod.copy.issues": "Copy Issues URL",
+  "gui.bisect.mod.copy.path": "Copy Root Path",
+  "gui.bisect.mod.open.path": "Open Root Mod",
+  "gui.bisect.mod.open.sources": "Open Sources",
+  "gui.bisect.mod.open.homepage": "Open Homepage",
+  "gui.bisect.mod.open.issues": "Open Issues",
+  "gui.bisect.summary.fix.list.start": "- Remove ",
+  "gui.bisect.summary.fix.list.middle": ", ",
+  "gui.bisect.summary.fix.list.end": " and "
 }

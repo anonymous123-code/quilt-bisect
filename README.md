@@ -87,8 +87,10 @@ For testing, I also recommend [Quilt Crasher](https://github.com/anonymous123-co
 
 While the code is ARR, this is only to prevent ports to other mod loaders or low-effort copies. Feel free to copy parts of the code for your mod. If your mod does similar things to this mod, credit me. You can also ask for me for permission. If it's not a port to another mod loader, I'll likely agree.
 
----
+## Credit
 
 `PluginLogger`, `MinecraftServerMixin` and `GracefulTerminator` were mostly taken from https://github.com/comp500/ModVote.
 `BisectPluginProcessManager` also contains large parts of `ModvotePlugin` from that repo.
-All of these are under the [MIT license](Modvote-License) (by comp500)
+All of these are under the [MIT license](external-licenses/Modvote-License) (by comp500)
+
+`IconStore` contains code from https://github.com/TerraformersMC/ModMenu, specifically from `FabricIconHandler` and `FabricMod#getIcon`. `java_icon.png`, `minecraft_icon.png` and `unknown_icon.png` were also taken from there. Mod Menu is also licensed under the [MIT license](external-licenses/Modmenu-License) (by Prospector)
