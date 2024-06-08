@@ -238,16 +238,16 @@ public class ModWidget extends ClickableWidget {
 
 		public Text text() {
 			return switch (this) {
-				case OpenPath -> Text.of("Open path");
-				case OpenHomepage -> Text.of("Open homepage");
-				case OpenIssues -> Text.of("Open issues");
-				case OpenSources -> Text.of("Open sources");
-				case CopyPath -> Text.of("Copy path");
-				case CopyHomepage -> Text.of("Copy homepage");
-				case CopyIssues -> Text.of("Copy issues");
-				case CopySources -> Text.of("Copy sources");
-				case CopyName -> Text.of("Copy name");
-				case CopyId -> Text.of("Copy id");
+				case OpenPath -> Text.translatable("gui.bisect.mod.open.path");
+				case OpenHomepage -> Text.translatable("gui.bisect.mod.open.homepage");
+				case OpenIssues -> Text.translatable("gui.bisect.mod.open.issues");
+				case OpenSources -> Text.translatable("gui.bisect.mod.open.sources");
+				case CopyPath -> Text.translatable("gui.bisect.mod.copy.path");
+				case CopyHomepage -> Text.translatable("gui.bisect.mod.copy.homepage");
+				case CopyIssues -> Text.translatable("gui.bisect.mod.copy.issues");
+				case CopySources -> Text.translatable("gui.bisect.mod.copy.sources");
+				case CopyName -> Text.translatable("gui.bisect.mod.copy.name");
+				case CopyId -> Text.translatable("gui.bisect.mod.copy.id");
 			};
 		}
 	}

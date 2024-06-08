@@ -27,7 +27,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 	public RemovedModContainerStore removedModContainerStore;
 
 	public BisectSummaryScreen() {
-		super(Text.of("Bisect summary"));
+		super(Text.translatable("gui.bisect.summary"));
 		this.behaviorHolder = new ModWidget.ClickBehaviorHolder(ModWidget.ClickBehavior.OpenPath);
 	}
 
@@ -52,7 +52,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 		);
 		addDrawableChild(new SpruceLabelWidget(
 			Position.of(this.width / 2 - 155, y + 3),
-			Text.of("On mod click").setStyle(Style.EMPTY.withColor(Formatting.WHITE)).get(0),
+			Text.translatable("gui.bisect.mod.click").setStyle(Style.EMPTY.withColor(Formatting.WHITE)),
 			150,
 			true
 		));
@@ -65,7 +65,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 					x,
 					y,
 					310,
-					Text.of("Crash " + crashIndex),
+					Text.translatable("gui.bisect.summary.crash.name", crashIndex),
 					Text.of(((Issue.CrashIssue) issue).stacktraces.get(0).split("\n", 2)[0]),
 					issue
 				);
@@ -104,7 +104,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 			this.addDrawableChild(subtitleLabel);
 			y += subtitleLabel.getHeight();
 		}
-		var fixesLabel = new SpruceLabelWidget(Position.of(x, y), Text.of("Fixes:"), maxWidth);
+		var fixesLabel = new SpruceLabelWidget(Position.of(x, y), Text.translatable("gui.bisect.summary.fixes"), maxWidth);
 		y += fixesLabel.getHeight();
 		this.addDrawableChild(fixesLabel);
 		for (Set<String> fix : BisectUtils.mergeReproductions(issue.fix.reproductions)) {
@@ -114,7 +114,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 	}
 
 	int draw_fix(int x, int y, int maxWidth, Set<String> fix) {
-		var fixStart = new SpruceLabelWidget(Position.of(x, y), Text.of("- Remove "), maxWidth);
+		var fixStart = new SpruceLabelWidget(Position.of(x, y), Text.translatable("gui.bisect.summary.fix.list.start"), maxWidth);
 		x += fixStart.getWidth();
 		maxWidth -= fixStart.getWidth();
 		this.addDrawableChild(fixStart);
@@ -138,11 +138,11 @@ public class BisectSummaryScreen extends SpruceScreen {
 			currentWidth += widget.getWidth();
 			currentX += widget.getWidth() + 2;
 			if (i < array.length - 2) {
-				var commaLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.of(", "), maxWidth);
+				var commaLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.translatable("gui.bisect.summary.fix.list.middle"), maxWidth);
 				currentX += commaLabel.getWidth();
 				this.addDrawableChild(commaLabel);
 			} else if (i == array.length - 2) {
-				var andLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.of(" and "), maxWidth);
+				var andLabel = new SpruceLabelWidget(Position.of(currentX, y), Text.translatable("gui.bisect.summary.fix.list.end"), maxWidth);
 				currentX += andLabel.getWidth();
 				this.addDrawableChild(andLabel);
 			}
