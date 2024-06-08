@@ -1,8 +1,9 @@
-package io.github.anonymous123_code.quilt_bisect.gui;
+package io.github.anonymous123_code.quilt_bisect.gui.widget;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
+import io.github.anonymous123_code.quilt_bisect.gui.IconStore;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;

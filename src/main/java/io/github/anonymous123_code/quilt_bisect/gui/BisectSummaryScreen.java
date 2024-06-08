@@ -4,7 +4,8 @@ import dev.lambdaurora.spruceui.Position;
 import dev.lambdaurora.spruceui.screen.SpruceScreen;
 import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
 import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
-import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
+import dev.lambdaurora.spruceui.widget.SpruceSeparatorWidget;
+import io.github.anonymous123_code.quilt_bisect.gui.widget.ModWidget;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
@@ -15,6 +16,7 @@ import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.QuiltLoader;
 
 import java.util.Set;
@@ -50,8 +52,7 @@ public class BisectSummaryScreen extends SpruceScreen {
 		);
 		addDrawableChild(new SpruceLabelWidget(
 			Position.of(this.width / 2 - 155, y + 3),
-			Text.of("On mod click").setStyle(
-				Style.EMPTY.withColor(Formatting.WHITE)).get(0),
+			Text.of("On mod click").setStyle(Style.EMPTY.withColor(Formatting.WHITE)).get(0),
 			150,
 			true
 		));
@@ -64,17 +65,16 @@ public class BisectSummaryScreen extends SpruceScreen {
 					x,
 					y,
 					310,
-					Text.of("Crash " + crashIndex)
-						.copy()
-						.append("\n" + ((Issue.CrashIssue) issue).stacktraces.get(0).split("\n", 2)[0]),
+					Text.of("Crash " + crashIndex),
+					Text.of(((Issue.CrashIssue) issue).stacktraces.get(0).split("\n", 2)[0]),
 					issue
 				);
 				crashIndex++;
 			} else if (issue instanceof Issue.NamedIssue logIssue) {
-				y = draw_issue(x, y, 310, Text.of(logIssue.getName()), issue);
+				y = draw_issue(x, y, 310, Text.of(logIssue.getName()), null, issue);
 			}
 		}
-		this.addDrawableChild(new SpruceButtonWidget(
+		this.addSelectableChild(new SpruceButtonWidget(
 			Position.of(this.width / 2 - 100, this.height - 38),
 			200,
 			20,
@@ -94,10 +94,16 @@ public class BisectSummaryScreen extends SpruceScreen {
 		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
 	}
 
-	int draw_issue(int x, int y, int maxWidth, Text header, Issue issue) {
-		var headerLabel = new SpruceLabelWidget(Position.of(x, y), header, maxWidth);
+	int draw_issue(int x, int y, int maxWidth, Text header, @Nullable Text subtitle, Issue issue) {
+		y += 5;
+		var headerLabel = new SpruceSeparatorWidget(Position.of(x, y), maxWidth, header);
 		this.addDrawableChild(headerLabel);
 		y += headerLabel.getHeight();
+		if (subtitle != null) {
+			var subtitleLabel = new SpruceLabelWidget(Position.of(x, y), subtitle, maxWidth);
+			this.addDrawableChild(subtitleLabel);
+			y += subtitleLabel.getHeight();
+		}
 		var fixesLabel = new SpruceLabelWidget(Position.of(x, y), Text.of("Fixes:"), maxWidth);
 		y += fixesLabel.getHeight();
 		this.addDrawableChild(fixesLabel);
@@ -119,7 +125,6 @@ public class BisectSummaryScreen extends SpruceScreen {
 		String[] array = fix.toArray(new String[0]);
 		for (int i = 0; i < array.length; i++) {
 			String modId = array[i];
-			QuiltBisect.LOGGER.info(modId);
 			var modContainer = QuiltLoader.getModContainer(modId)
 										  .orElseGet(() -> removedModContainerStore.getRemovedMods(modId).get(0));
 			var widget = new ModWidget(currentX, y, behaviorHolder, modContainer, iconStore);
