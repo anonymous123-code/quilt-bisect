@@ -12,17 +12,21 @@ import io.github.anonymous123_code.quilt_bisect.shared.ReflectiveRemovedContaine
 import io.github.anonymous123_code.quilt_bisect.shared.RemovedModContainerStore;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.text.CommonTexts;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.quiltmc.loader.api.QuiltLoader;
 
 import java.util.Set;
 
 public class BisectSummaryScreen extends SpruceScreen {
 	public final IconStore iconStore = new IconStore();
+	private final ModWidget.ClickBehaviorHolder behaviorHolder;
 	public RemovedModContainerStore removedModContainerStore;
 
 	public BisectSummaryScreen() {
 		super(Text.of("Bisect summary"));
+		this.behaviorHolder = new ModWidget.ClickBehaviorHolder(ModWidget.ClickBehavior.OpenPath);
 	}
 
 
@@ -34,6 +38,25 @@ public class BisectSummaryScreen extends SpruceScreen {
 		var oldBisect = ActiveBisectConfig.INSTANCE;
 		int x = this.width / 2 - 155;
 		int y = 40;
+		var cycleButton = new SpruceButtonWidget(
+			Position.of(this.width / 2 + 5, y),
+			150,
+			20,
+			behaviorHolder.inner.text(),
+			button -> {
+				behaviorHolder.inner = behaviorHolder.inner.next();
+				button.setMessage(behaviorHolder.inner.text());
+			}
+		);
+		addDrawableChild(new SpruceLabelWidget(
+			Position.of(this.width / 2 - 155, y + 3),
+			Text.of("On mod click").setStyle(
+				Style.EMPTY.withColor(Formatting.WHITE)).get(0),
+			150,
+			true
+		));
+		y += cycleButton.getHeight();
+		addSelectableChild(cycleButton);
 		int crashIndex = 1;
 		for (Issue issue : oldBisect.issues) {
 			if (issue instanceof Issue.CrashIssue) {
@@ -97,8 +120,9 @@ public class BisectSummaryScreen extends SpruceScreen {
 		for (int i = 0; i < array.length; i++) {
 			String modId = array[i];
 			QuiltBisect.LOGGER.info(modId);
-			var modContainer = QuiltLoader.getModContainer(modId).orElseGet(() -> removedModContainerStore.getRemovedMods(modId).get(0));
-			var widget = new ModWidget(currentX, y, modContainer, iconStore);
+			var modContainer = QuiltLoader.getModContainer(modId)
+										  .orElseGet(() -> removedModContainerStore.getRemovedMods(modId).get(0));
+			var widget = new ModWidget(currentX, y, behaviorHolder, modContainer, iconStore);
 			if (currentWidth + widget.getWidth() > maxWidth) {
 				currentWidth = 0;
 				currentX = x + 10;
