@@ -6,7 +6,7 @@ import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.button.ButtonWidget;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import org.quiltmc.loader.api.ModContainer;
@@ -34,7 +34,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 	@Override
 	public void onInitialize(ModContainer mod) {
 		MOD_ID = mod.metadata().id();
-		
+
 		var bisectConfig = ActiveBisectConfig.INSTANCE;
 		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {

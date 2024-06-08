@@ -1,12 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.gui;
 
 import dev.lambdaurora.spruceui.Position;
-import dev.lambdaurora.spruceui.util.SpruceUtil;
-import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
-import dev.lambdaurora.spruceui.widget.SpruceCheckboxWidget;
-import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
 import dev.lambdaurora.spruceui.widget.text.SpruceTextAreaWidget;
-import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
 import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
@@ -14,17 +9,35 @@ import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.CheckboxWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.button.ButtonWidget;
+import net.minecraft.client.gui.widget.text.TextWidget;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Predicate;
+
 public class StartBisectScreen extends CreateIssueScreen {
+	public static final Predicate<String> INTEGER_INPUT_PREDICATE = input -> {
+		if (input.isEmpty() || input.equals("-")) {
+			return true;
+		}
+		try {
+			Integer.parseInt(input);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	};
 	private AutoJoinType autoJoinMode = AutoJoinType.None;
-	private SpruceTextFieldWidget autoJoinNameWidget;
-	private SpruceCheckboxWidget autoJoinDisableWorldSavingWidget;
-	private SpruceCheckboxWidget autoJoinEnableAutoAcceptWidget;
+	private TextFieldWidget autoJoinNameWidget;
+	private CheckboxWidget autoJoinDisableWorldSavingWidget;
+	private CheckboxWidget autoJoinEnableAutoAcceptWidget;
 	private SpruceTextAreaWidget autoJoinCommandInput;
 	private int autoJoinAutoAcceptTime;
 
@@ -34,6 +47,14 @@ public class StartBisectScreen extends CreateIssueScreen {
 
 	public StartBisectScreen(@Nullable Screen parent) {
 		this(Text.translatable("gui.bisect.start.screen"), 7, 2, 20, 150, parent);
+	}
+
+	private static int parseIntFromString(String value) {
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			return 0;
+		}
 	}
 
 	@Override
@@ -55,9 +76,9 @@ public class StartBisectScreen extends CreateIssueScreen {
 			autoJoinMode.convertToAutoTest(),
 			autoJoinNameWidget.getText(),
 			autoJoinCommandInput.getText(),
-			autoJoinDisableWorldSavingWidget.getValue(),
+			autoJoinDisableWorldSavingWidget.isChecked(),
 			autoJoinAutoAcceptTime,
-			autoJoinEnableAutoAcceptWidget.getValue()
+			autoJoinEnableAutoAcceptWidget.isChecked()
 		);
 		saveAndQuit();
 	}
@@ -67,55 +88,55 @@ public class StartBisectScreen extends CreateIssueScreen {
 		String autoJoinName = result.autoJoinName();
 		autoJoinMode = AutoJoinType.from(result.autoJoinMode());
 		// Auto Join
-		addDrawableChild(new SpruceButtonWidget(
-			centerVertically(row, 0, 20),
-			CELL_WIDTH,
-			20,
-			autoJoinMode.text,
-			button -> {
-				autoJoinMode = autoJoinMode.nextCycle(Screen.hasAltDown());
-				button.setMessage(autoJoinMode.text);
-			}
-		));
-		autoJoinNameWidget = new SpruceTextFieldWidget(
-			centerVertically(row, 1, 20),
+		addDrawableSelectableElement(ButtonWidget.builder(autoJoinMode.text, button -> {
+			autoJoinMode = autoJoinMode.nextCycle(Screen.hasAltDown());
+			button.setMessage(autoJoinMode.text);
+		}).positionAndSize(cornerX(0), centerY(row, 20), CELL_WIDTH, 20).build());
+		autoJoinNameWidget = new TextFieldWidget(
+			textRenderer,
+			cornerX(1),
+			centerY(row, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_join.name")
 		);
 		autoJoinNameWidget.setText(autoJoinName);
-		addDrawableChild(autoJoinNameWidget);
+		addDrawableSelectableElement(autoJoinNameWidget);
 	}
 
 	private void addDisableWorldSavingOption(int row) {
-		autoJoinDisableWorldSavingWidget = new SpruceCheckboxWidget(
-			centerVertically(row, 0, 20),
+		autoJoinDisableWorldSavingWidget = new CheckboxWidget(
+			cornerX(0),
+			centerY(row, 20),
 			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
 			20,
 			Text.translatable("gui.bisect.start.disable_world_saving"),
 			MainConfig.INSTANCE.defaultBisectSettings.disableWorldSaving()
 		);
-		addDrawableChild(autoJoinDisableWorldSavingWidget);
+		addDrawableSelectableElement(autoJoinDisableWorldSavingWidget);
 	}
 
 	private void addAutoAcceptOption(int row) {
-		autoJoinEnableAutoAcceptWidget = new SpruceCheckboxWidget(
-			centerVertically(row, 0, 20),
+		autoJoinEnableAutoAcceptWidget = new CheckboxWidget(
+			cornerX(0),
+			centerY(row, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_accept.enable"),
 			MainConfig.INSTANCE.defaultBisectSettings.autoAccept()
 		);
-		addDrawableChild(autoJoinEnableAutoAcceptWidget);
-		SpruceTextFieldWidget autoJoinAutoAcceptTimeWidget = new SpruceTextFieldWidget(
-			centerVertically(row, 1, 20),
+		addDrawableSelectableElement(autoJoinEnableAutoAcceptWidget);
+		TextFieldWidget autoJoinAutoAcceptTimeWidget = new TextFieldWidget(
+			textRenderer,
+			cornerX(1),
+			centerY(row, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.start.auto_accept.time")
 		);
 		autoJoinAutoAcceptTime = MainConfig.INSTANCE.defaultBisectSettings.autoAcceptTime();
 		autoJoinAutoAcceptTimeWidget.setText(String.valueOf(autoJoinAutoAcceptTime));
-		autoJoinAutoAcceptTimeWidget.setTextPredicate(SpruceTextFieldWidget.INTEGER_INPUT_PREDICATE);
+		autoJoinAutoAcceptTimeWidget.setTextPredicate(INTEGER_INPUT_PREDICATE);
 		autoJoinAutoAcceptTimeWidget.setRenderTextProvider((displayedText, offset) -> {
 			try {
 				Integer.parseInt(autoJoinAutoAcceptTimeWidget.getText());
@@ -124,33 +145,36 @@ public class StartBisectScreen extends CreateIssueScreen {
 				return OrderedText.forward(displayedText, Style.EMPTY.withColor(Formatting.RED));
 			}
 		});
-		autoJoinAutoAcceptTimeWidget.setChangedListener(input -> autoJoinAutoAcceptTime = SpruceUtil.parseIntFromString(
-			input));
-		autoJoinAutoAcceptTimeWidget.setTooltip(Text.translatable("gui.bisect.start.auto_accept.time.tooltip"));
-		addDrawableChild(autoJoinAutoAcceptTimeWidget);
+		autoJoinAutoAcceptTimeWidget.setChangedListener(input -> autoJoinAutoAcceptTime = parseIntFromString(input));
+		autoJoinAutoAcceptTimeWidget.setTooltip(Tooltip.create(Text.translatable(
+			"gui.bisect.start.auto_accept.time.tooltip")));
+		addDrawableSelectableElement(autoJoinAutoAcceptTimeWidget);
 	}
 
 	private void addCommandInput(int row, int rowCount) {
-		addDrawableChild(new SpruceLabelWidget(
-			centerVertically(row, 0, 10),
+		addDrawable(new TextWidget(
+			cornerX(0),
+			centerY(row, 10),
+			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
+			10,
 			Text.translatable("gui.bisect.start.command.label"),
-			CELL_WIDTH * 2 + HORIZONTAL_PADDING
+			textRenderer
 		));
 		autoJoinCommandInput = new SpruceTextAreaWidget(
-			Position.of(corner(row + 1, 0), 0, -VERTICAL_PADDING),
+			Position.of(cornerX(0), cornerY(row + 1) - VERTICAL_PADDING),
 			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
 			(rowCount - 1) * (CELL_HEIGHT + VERTICAL_PADDING) - VERTICAL_PADDING,
 			Text.translatable("gui.bisect.start.command.input")
 		);
 		autoJoinCommandInput.setText(MainConfig.INSTANCE.defaultBisectSettings.autoJoinCommands());
-		addDrawableChild(autoJoinCommandInput);
+		addDrawableSelectableElement(autoJoinCommandInput);
 	}
 
 	@Override
-	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+		super.render(graphics, mouseX, mouseY, delta);
+		graphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
 	}
-
 
 	public enum AutoJoinType {
 		None(Text.translatable("gui.bisect.start.auto_join.none")),
