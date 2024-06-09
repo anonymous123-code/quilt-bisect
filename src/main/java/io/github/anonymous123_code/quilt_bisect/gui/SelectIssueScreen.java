@@ -96,6 +96,11 @@ public class SelectIssueScreen extends Screen {
 		graphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
 	}
 
+	@Override
+	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+		super.renderBackgroundTexture(graphics);
+	}
+
 	public class IssueList extends AlwaysSelectedEntryListWidget<IssueList.IssueEntry> {
 		public IssueList(MinecraftClient minecraftClient) {
 			super(

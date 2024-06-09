@@ -107,6 +107,11 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	@Override
+	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+		super.renderBackgroundTexture(graphics);
+	}
+
+	@Override
 	public void closeScreen() {
 		client.setScreen(parent);
 	}
