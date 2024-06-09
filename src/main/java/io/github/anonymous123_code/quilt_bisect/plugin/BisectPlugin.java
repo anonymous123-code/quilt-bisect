@@ -7,7 +7,11 @@ import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
 import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.loader.api.*;
+import org.quiltmc.loader.api.LoaderValue;
+import org.quiltmc.loader.api.ModDependency;
+import org.quiltmc.loader.api.ModDependencyIdentifier;
+import org.quiltmc.loader.api.QuiltLoader;
+import org.quiltmc.loader.api.VersionRange;
 import org.quiltmc.loader.api.gui.QuiltLoaderText;
 import org.quiltmc.loader.api.plugin.ModMetadataExt;
 import org.quiltmc.loader.api.plugin.QuiltLoaderPlugin;
@@ -77,73 +81,52 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 			config.update();
 
 			var crashLogFile = logFileManager.getNew();
-			if (config.isActive()) {
-				try {
+			try {
+				if (config.isActive()) {
 					Bisect.parentBisect(
 						crashLogFile.isEmpty() ? null : Files.readString(crashLogFile.get()),
 						crashLogFile.map(file -> file.getFileName().toString()).orElse(null)
 					);
-				} catch (IOException | NoSuchAlgorithmException e) {
-					throw new RuntimeException(e);
-				} catch (InvalidCommunicationFileStateException e) {
-					context.reportError(QuiltLoaderText.of(e.titleText())).appendDescription(QuiltLoaderText.of(
-						"This is likely caused by an error in bisect itself or by another loader plugin."));
-					context.haltLoading();
-				} catch (StacktraceExtractionFailException e) {
-					var error = context.reportError(QuiltLoaderText.of(
-										   "Bisect: Failed to extract stack trace from crash log."))
-									   .appendDescription(QuiltLoaderText.of(
-										   "Please open an issue with the log attached"));
-					//noinspection OptionalGetWithoutIsPresent
-					error.addCopyFileToClipboardButton(
-						QuiltLoaderText.of("Copy crash log file"),
-						crashLogFile.get()
-					);
-					error.addOpenLinkButton(
-						QuiltLoaderText.of("Create new issue"),
-						"https://github.com/anonymous123-code/quilt-bisect/issues/new"
-					);
-					context.haltLoading();
-				}
-			} else {
-				if (crashLogFile.isEmpty()) {
-					System.exit(exitCode.get());
 				} else {
-					try {
-						var crashLog = Files.readString(crashLogFile.get());
-						var active_bisect = ActiveBisectConfig.INSTANCE;
-						active_bisect.bisectSettings = BisectPluginUi.openDialog(exitCode.get(), crashLog);
-						if (active_bisect.isActive()) {
-							Bisect.parentBisect(crashLog, crashLogFile.get().getFileName().toString());
-						} else {
-							System.exit(exitCode.get());
+					if (crashLogFile.isEmpty()) {
+						System.exit(exitCode.get());
+					} else {
+						try {
+							var crashLog = Files.readString(crashLogFile.get());
+							var active_bisect = ActiveBisectConfig.INSTANCE;
+							active_bisect.bisectSettings = BisectPluginUi.openDialog(exitCode.get(), crashLog);
+							if (active_bisect.isActive()) {
+								Bisect.parentBisect(crashLog, crashLogFile.get().getFileName().toString());
+							} else {
+								System.exit(exitCode.get());
+							}
+						} catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
+								 IllegalAccessException e) {
+							throw new RuntimeException(e);
 						}
-					} catch (UnsupportedLookAndFeelException | IOException | ClassNotFoundException |
-							 InstantiationException | IllegalAccessException | NoSuchAlgorithmException e) {
-						throw new RuntimeException(e);
-					} catch (InvalidCommunicationFileStateException e) {
-						context.reportError(QuiltLoaderText.of(e.titleText())).appendDescription(QuiltLoaderText.of(
-							"This is likely caused by an error in bisect itself or by another loader plugin."));
-						context.haltLoading();
-					} catch (StacktraceExtractionFailException e) {
-						var error = context.reportError(QuiltLoaderText.of(
-											   "Bisect: Failed to extract stack trace from crash log."))
-										   .appendDescription(QuiltLoaderText.of(
-											   "Please open an issue with the log attached"));
-						error.addCopyFileToClipboardButton(
-							QuiltLoaderText.of("Copy crash log file"),
-							crashLogFile.get()
-						);
-						error.addOpenLinkButton(
-							QuiltLoaderText.of("Create new issue"),
-							"https://github.com/anonymous123-code/quilt-bisect/issues/new"
-						);
-						context.haltLoading();
 					}
 				}
+			} catch (IOException | NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			} catch (InvalidCommunicationFileStateException e) {
+				context.reportError(QuiltLoaderText.of(e.titleText())).appendDescription(QuiltLoaderText.of(
+					"This is likely caused by an error in bisect itself or by another loader plugin."));
+				context.haltLoading();
+			} catch (StacktraceExtractionFailException e) {
+				var error = context.reportError(QuiltLoaderText.of(
+					"Bisect: Failed to extract stack trace from crash log.")).appendDescription(QuiltLoaderText.of(
+					"Please open an issue with the log attached"));
+				//noinspection OptionalGetWithoutIsPresent
+				error.addCopyFileToClipboardButton(QuiltLoaderText.of("Copy crash log file"), crashLogFile.get());
+				error.addOpenLinkButton(
+					QuiltLoaderText.of("Create new issue"),
+					"https://github.com/anonymous123-code/quilt-bisect/issues/new"
+				);
+				context.haltLoading();
 			}
 			exitCode = processManager.fork(QuiltLoader.getLaunchArguments(false));
 		}
+
 		System.exit(1);
 	}
 
@@ -245,11 +228,15 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 		var javaLoadOption = context.manager().getAllMods("java").iterator().next();
 		var javaClassLoader = javaLoadOption.getClass().getClassLoader();
 		try {
-			var internalModOptionBaseClass = javaClassLoader.loadClass("org.quiltmc.loader.impl.plugin.base.InternalModOptionBase");
+			var internalModOptionBaseClass = javaClassLoader.loadClass(
+				"org.quiltmc.loader.impl.plugin.base.InternalModOptionBase");
 			if (internalModOptionBaseClass.isAssignableFrom(javaLoadOption.getClass())) {
 				var field = internalModOptionBaseClass.getDeclaredField("metadata");
 				field.setAccessible(true);
-				field.set(javaLoadOption, new SmuggleModMetadataExt(javaLoadOption.metadata(), RemovedModContainerStoreImpl.getInstance()));
+				field.set(
+					javaLoadOption,
+					new SmuggleModMetadataExt(javaLoadOption.metadata(), RemovedModContainerStoreImpl.getInstance())
+				);
 			} else {
 				throw new RuntimeException("Java load option class doesnt seem to be a InternalModLoadOptionBase");
 			}
@@ -260,7 +247,8 @@ public class BisectPlugin implements QuiltLoaderPlugin {
 
 	@Override
 	public void finish(ModSolveResult result) {
-		LOGGER.error("LoaderPlugin.finish was called. This is not expected. It is likely that Quilt Bisect is out of date with quilt loader");
+		LOGGER.error(
+			"LoaderPlugin.finish was called. This is not expected. It is likely that Quilt Bisect is out of date with quilt loader");
 	}
 
 	public @Nullable ModLoadOption findParentLoadOption(ModLoadOption loadOption, Map<PluginGuiTreeNode, ModLoadOption> treeNodeModLoadOptionMap) {
