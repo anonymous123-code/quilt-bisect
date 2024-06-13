@@ -4,9 +4,10 @@ import io.github.anonymous123_code.quilt_bisect.gui.BisectSummaryScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.CreateIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
+import io.github.anonymous123_code.quilt_bisect.mixin.ScreenInvoker;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.button.ButtonWidget;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import org.quiltmc.loader.api.ModContainer;
@@ -34,21 +35,21 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 	@Override
 	public void onInitialize(ModContainer mod) {
 		MOD_ID = mod.metadata().id();
-		
+
 		var bisectConfig = ActiveBisectConfig.INSTANCE;
 		if (bisectConfig.isActive()) {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
 				if (!(screen instanceof BisectSummaryScreen || screen instanceof CreateIssueScreen || screen instanceof SelectIssueScreen || screen instanceof StartBisectScreen)) {
-					screen.getButtons().add(ButtonWidget.builder(
+					((ScreenInvoker) screen).invokeAddDrawableSelectableElement(ButtonWidget.builder(
 						Text.translatable("gui.bisect.no_issue"),
 						buttonWidget -> markAsWorkingAndShutdown()
 					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH - 5, 0).build());
-					screen.getButtons().add(ButtonWidget.builder(
+					((ScreenInvoker) screen).invokeAddDrawableSelectableElement(ButtonWidget.builder(
 						Text.translatable("gui.bisect.manual_issue"),
 						buttonWidget -> screen.getClient().setScreen(new SelectIssueScreen(screen))
 					).position(screen.width / 2 + 5, 0).build());
 				} else {
-					screen.getButtons().add(ButtonWidget.builder(
+					((ScreenInvoker) screen).invokeAddDrawableSelectableElement(ButtonWidget.builder(
 						Text.translatable("gui.bisect.no_issue"),
 						buttonWidget -> markAsWorkingAndShutdown()
 					).position(20, 10).build());
@@ -58,7 +59,7 @@ public class QuiltBisect implements ModInitializer, PreLaunchEntrypoint, ClientT
 		} else {
 			ScreenEvents.AFTER_INIT.register((screen, client, firstInit) -> {
 				if (!(screen instanceof BisectSummaryScreen || screen instanceof CreateIssueScreen || screen instanceof SelectIssueScreen || screen instanceof StartBisectScreen)) {
-					screen.getButtons().add(ButtonWidget.builder(
+					((ScreenInvoker) screen).invokeAddDrawableSelectableElement(ButtonWidget.builder(
 						Text.translatable("gui.bisect.start"),
 						(w) -> screen.getClient().setScreen(new StartBisectScreen(screen))
 					).position(screen.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, 0).build());

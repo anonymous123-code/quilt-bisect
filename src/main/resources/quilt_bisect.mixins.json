@@ -11,6 +11,7 @@
     "MinecraftClientMixin",
     "MinecraftServerMixin",
     "RealmsConnectionMixin",
+    "ScreenInvoker",
     "TitleScreenMixin"
   ],
   "injectors": {

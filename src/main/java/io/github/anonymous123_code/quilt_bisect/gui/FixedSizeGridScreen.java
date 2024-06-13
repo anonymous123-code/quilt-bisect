@@ -1,10 +1,9 @@
 package io.github.anonymous123_code.quilt_bisect.gui;
 
-import dev.lambdaurora.spruceui.Position;
-import dev.lambdaurora.spruceui.screen.SpruceScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
-public abstract class FixedSizeGridScreen extends SpruceScreen {
+public abstract class FixedSizeGridScreen extends Screen {
 	protected final int ROW_COUNT;
 	protected final int COLUMN_COUNT;
 	protected final int CELL_HEIGHT;
@@ -22,24 +21,21 @@ public abstract class FixedSizeGridScreen extends SpruceScreen {
 		VERTICAL_PADDING = verticalPadding;
 	}
 
-	protected Position corner(int row, int column) {
+	protected int cornerX(int column) {
 		int perElementWidth = CELL_WIDTH + HORIZONTAL_PADDING;
+		return width / 2 - (perElementWidth * COLUMN_COUNT / 2 - HORIZONTAL_PADDING / 2) + (perElementWidth * column);
+	}
+
+	protected int cornerY(int row) {
 		int perElementHeight = CELL_HEIGHT + VERTICAL_PADDING;
-		return Position.of(
-			width / 2 - (perElementWidth * COLUMN_COUNT / 2 - HORIZONTAL_PADDING / 2) + (perElementWidth * column),
-			height / 2 - (perElementHeight * ROW_COUNT / 2 - VERTICAL_PADDING / 2) + (perElementHeight * row)
-		);
+		return height / 2 - (perElementHeight * ROW_COUNT / 2 - VERTICAL_PADDING / 2) + (perElementHeight * row);
 	}
 
-	protected Position centerVertically(int row, int column, int height) {
-		return Position.of(corner(row, column), 0, (CELL_HEIGHT - height) / 2);
+	protected int centerX(int column, int width) {
+		return cornerX(column) + (CELL_WIDTH - width) / 2;
 	}
 
-	protected Position centerHorizontally(int row, int column, int width) {
-		return Position.of(corner(row, column), (CELL_WIDTH - width) / 2, 0);
-	}
-
-	protected Position center(int row, int column, int width, int height) {
-		return Position.of(corner(row, column), (CELL_WIDTH - width) / 2, (CELL_HEIGHT - height) / 2);
+	protected int centerY(int row, int height) {
+		return cornerY(row) + (CELL_HEIGHT - height) / 2;
 	}
 }

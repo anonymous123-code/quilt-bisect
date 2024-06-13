@@ -1,16 +1,14 @@
 package io.github.anonymous123_code.quilt_bisect.gui;
 
-import dev.lambdaurora.spruceui.Position;
-import dev.lambdaurora.spruceui.widget.SpruceButtonWidget;
-import dev.lambdaurora.spruceui.widget.SpruceLabelWidget;
-import dev.lambdaurora.spruceui.widget.text.SpruceTextFieldWidget;
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
 import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
 import io.github.anonymous123_code.quilt_bisect.shared.Issue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.button.ButtonWidget;
+import net.minecraft.client.gui.widget.text.TextWidget;
 import net.minecraft.text.CommonTexts;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +18,7 @@ import java.nio.file.Files;
 
 public class CreateIssueScreen extends FixedSizeGridScreen {
 	private final Screen parent;
-	protected SpruceTextFieldWidget issueNameWidget;
+	protected TextFieldWidget issueNameWidget;
 
 	public CreateIssueScreen(Text title, int rowCount, int columnCount, int cellHeight, int cellWidth, int horizontalPadding, int verticalPadding, @Nullable Screen parent) {
 		super(title, rowCount, columnCount, cellHeight, cellWidth, horizontalPadding, verticalPadding);
@@ -58,39 +56,37 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 
 	protected void addIssueNameInput(int row) {
 		// Issue Name
-		addDrawableChild(new SpruceLabelWidget(
-			centerVertically(row, 0, 10),
-			Text.translatable("gui.bisect.issue_name"),
+		addDrawable(new TextWidget(
+			cornerX(0),
+			centerY(row, 10),
 			CELL_WIDTH,
-			false
+			10,
+			Text.translatable("gui.bisect.issue_name"),
+			textRenderer
 		));
-		issueNameWidget = new SpruceTextFieldWidget(
-			centerVertically(row, 1, 20),
+		issueNameWidget = new TextFieldWidget(
+			textRenderer,
+			cornerX(1),
+			centerY(row, 20),
 			CELL_WIDTH,
 			20,
 			Text.translatable("gui.bisect.issue_name")
 		);
-		addDrawableChild(issueNameWidget);
+		addDrawableSelectableElement(issueNameWidget);
 	}
 
 	protected void addCancelContinueButtons(Text continueText) {
-		addDrawableChild(new SpruceButtonWidget(
-			Position.of(width / 2 + 5, height - 28),
-			ButtonWidget.DEFAULT_WIDTH,
-			20,
-			continueText,
-			button -> onDone()
-		));
-		addDrawableChild(new SpruceButtonWidget(
-			Position.of(
-				width / 2 - ButtonWidget.DEFAULT_WIDTH - 5,
-				height - 28
-			),
-			ButtonWidget.DEFAULT_WIDTH,
-			20,
-			CommonTexts.CANCEL,
-			button -> onCancel()
-		));
+		addDrawableSelectableElement(ButtonWidget.builder(continueText, button -> onDone())
+								.positionAndSize(width / 2 + 5, height - 28, ButtonWidget.DEFAULT_WIDTH, 20)
+								.build());
+		addDrawableSelectableElement(ButtonWidget.builder(CommonTexts.CANCEL, button -> onCancel())
+								.positionAndSize(
+									width / 2 - ButtonWidget.DEFAULT_WIDTH - 5,
+									height - 28,
+									ButtonWidget.DEFAULT_WIDTH,
+									20
+								)
+								.build());
 	}
 
 	protected void onCancel() {
@@ -105,8 +101,14 @@ public class CreateIssueScreen extends FixedSizeGridScreen {
 	}
 
 	@Override
-	public void renderTitle(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-		guiGraphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+		super.render(graphics, mouseX, mouseY, delta);
+		graphics.drawCenteredShadowedText(this.textRenderer, this.title, this.width / 2, 15, 0xffffff);
+	}
+
+	@Override
+	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+		super.renderBackgroundTexture(graphics);
 	}
 
 	@Override
