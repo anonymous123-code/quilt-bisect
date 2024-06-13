@@ -105,26 +105,20 @@ public class StartBisectScreen extends CreateIssueScreen {
 	}
 
 	private void addDisableWorldSavingOption(int row) {
-		autoJoinDisableWorldSavingWidget = new CheckboxWidget(
-			cornerX(0),
-			centerY(row, 20),
-			CELL_WIDTH * 2 + HORIZONTAL_PADDING,
-			20,
-			Text.translatable("gui.bisect.start.disable_world_saving"),
-			MainConfig.INSTANCE.defaultBisectSettings.disableWorldSaving()
-		);
+		autoJoinDisableWorldSavingWidget = CheckboxWidget.method_54787(Text.translatable(
+				"gui.bisect.start.disable_world_saving"), client.textRenderer) // CheckBoxWidget.builder()
+			.method_54789(cornerX(0), centerY(row, 20)) // .position()
+			.method_54794(MainConfig.INSTANCE.defaultBisectSettings.disableWorldSaving()) // .selected()
+			.method_54788(); //.build()
 		addDrawableSelectableElement(autoJoinDisableWorldSavingWidget);
 	}
 
 	private void addAutoAcceptOption(int row) {
-		autoJoinEnableAutoAcceptWidget = new CheckboxWidget(
-			cornerX(0),
-			centerY(row, 20),
-			CELL_WIDTH,
-			20,
-			Text.translatable("gui.bisect.start.auto_accept.enable"),
-			MainConfig.INSTANCE.defaultBisectSettings.autoAccept()
-		);
+		autoJoinEnableAutoAcceptWidget = CheckboxWidget.method_54787(Text.translatable(
+				"gui.bisect.start.auto_accept.enable"), client.textRenderer)
+			.method_54789(cornerX(0), centerY(row, 20))
+			.method_54794(MainConfig.INSTANCE.defaultBisectSettings.autoAccept())
+			.method_54788();
 		addDrawableSelectableElement(autoJoinEnableAutoAcceptWidget);
 		TextFieldWidget autoJoinAutoAcceptTimeWidget = new TextFieldWidget(
 			textRenderer,

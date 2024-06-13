@@ -33,7 +33,7 @@
 			},
 			{
 				"id": "minecraft",
-				"versions": "=1.20.2"
+				"versions": "=1.20.4"
 			},
 			{
 				"id": "spruceui",

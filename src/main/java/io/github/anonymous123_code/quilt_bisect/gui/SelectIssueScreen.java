@@ -108,7 +108,6 @@ public class SelectIssueScreen extends Screen {
 				SelectIssueScreen.this.width,
 				SelectIssueScreen.this.height,
 				32,
-				SelectIssueScreen.this.height - 64,
 				20
 			);
 		}

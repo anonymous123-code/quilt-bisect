@@ -21,9 +21,9 @@ import java.nio.file.Files;
 public class MinecraftClientMixin {
 
 	@Inject(method = "startIntegratedServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/storage/WorldSaveStorage$Session;backupLevelDataFile(Lnet/minecraft/registry/DynamicRegistryManager;Lnet/minecraft/world/SaveProperties;)V"))
-	public void updateAutoJoinData(String worldId, WorldSaveStorage.Session session, PackManager resourcePackManager, WorldStem worldStem, boolean isNewWorld, CallbackInfo ci) {
+	public void updateAutoJoinData(WorldSaveStorage.Session session, PackManager resourcePackManager, WorldStem worldStem, boolean isNewWorld, CallbackInfo ci) {
         try {
-            Files.writeString(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.World + "\n" + worldId);
+            Files.writeString(AbstractBisectConfig.configDirectory.resolve("lastActiveJoin.txt"), AutoTest.AutoJoinType.World + "\n" + worldStem.saveProperties().getWorldName());
         } catch (IOException e) {
             throw new RuntimeException("Failed to write last join comm file", e);
         }
