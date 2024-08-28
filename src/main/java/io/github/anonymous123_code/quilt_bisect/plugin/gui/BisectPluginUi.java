@@ -1,7 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin.gui;
 
-import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
-import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;

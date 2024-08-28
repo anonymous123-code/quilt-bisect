@@ -46,7 +46,7 @@
 		"packages":[
 			"io.github.anonymous123_code.quilt_bisect.plugin",
 			"io.github.anonymous123_code.quilt_bisect.plugin.gui",
-			"io.github.anonymous123_code.quilt_bisect.shared"
+			"io.github.anonymous123_code.quilt_bisect.shared_plugin"
 		]
 	},
 	"mixin": "quilt_bisect.mixins.json"

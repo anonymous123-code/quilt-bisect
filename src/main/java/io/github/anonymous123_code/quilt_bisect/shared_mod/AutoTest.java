@@ -1,7 +1,7 @@
-package io.github.anonymous123_code.quilt_bisect.shared;
+package io.github.anonymous123_code.quilt_bisect.shared_mod;
 
 public record AutoTest(
-	AutoTest.AutoJoinType autoJoinType,
+	AutoJoinType autoJoinType,
 	String autoJoinName,
 	String autoJoinCommands,
 	boolean disableWorldSaving,

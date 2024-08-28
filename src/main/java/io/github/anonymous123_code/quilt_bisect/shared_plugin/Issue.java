@@ -1,4 +1,4 @@
-package io.github.anonymous123_code.quilt_bisect.shared;
+package io.github.anonymous123_code.quilt_bisect.shared_plugin;
 
 import com.google.gson.annotations.SerializedName;
 

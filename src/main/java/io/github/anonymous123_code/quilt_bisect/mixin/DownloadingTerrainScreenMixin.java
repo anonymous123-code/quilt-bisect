@@ -1,8 +1,8 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
 import io.github.anonymous123_code.quilt_bisect.QuiltBisect;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AutoTest;
 import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;

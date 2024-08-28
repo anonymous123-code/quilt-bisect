@@ -1,7 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
-import io.github.anonymous123_code.quilt_bisect.shared.*;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;

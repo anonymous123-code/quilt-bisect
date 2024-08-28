@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.ModSet;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.ModSet;
 
 import java.util.ArrayList;
 import java.util.Collection;

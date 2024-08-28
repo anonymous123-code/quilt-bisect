@@ -1,8 +1,8 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.BisectUtils;
 import net.minecraft.client.RunArgs;
 import net.minecraft.client.main.Main;
 import org.spongepowered.asm.mixin.Mixin;

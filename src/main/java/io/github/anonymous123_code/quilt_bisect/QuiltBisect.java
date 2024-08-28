@@ -5,7 +5,7 @@ import io.github.anonymous123_code.quilt_bisect.gui.CreateIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.SelectIssueScreen;
 import io.github.anonymous123_code.quilt_bisect.gui.StartBisectScreen;
 import io.github.anonymous123_code.quilt_bisect.mixin.ScreenInvoker;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.ActiveBisectConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.button.ButtonWidget;
 import net.minecraft.server.integrated.IntegratedServer;

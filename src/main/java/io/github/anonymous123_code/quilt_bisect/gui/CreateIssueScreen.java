@@ -1,9 +1,9 @@
 package io.github.anonymous123_code.quilt_bisect.gui;
 
 import io.github.anonymous123_code.quilt_bisect.GracefulTerminator;
-import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.Issue;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AbstractBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.Issue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;

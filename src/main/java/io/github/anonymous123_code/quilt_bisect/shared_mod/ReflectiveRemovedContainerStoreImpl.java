@@ -1,4 +1,4 @@
-package io.github.anonymous123_code.quilt_bisect.shared;
+package io.github.anonymous123_code.quilt_bisect.shared_mod;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.ModContainer;

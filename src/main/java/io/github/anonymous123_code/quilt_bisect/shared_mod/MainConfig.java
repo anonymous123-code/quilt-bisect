@@ -1,4 +1,4 @@
-package io.github.anonymous123_code.quilt_bisect.shared;
+package io.github.anonymous123_code.quilt_bisect.shared_mod;
 
 import com.google.gson.GsonBuilder;
 
@@ -20,7 +20,8 @@ public class MainConfig extends AbstractBisectConfig {
 	/**
 	 * The default settings for a new bisect. The auto join name and auto join type are ignored in favor of the last joined.
 	 */
-	public AutoTest defaultBisectSettings = new AutoTest(AutoTest.AutoJoinType.None, "", "", false, 20 * 5, false);
+	public AutoTest defaultBisectSettings = new AutoTest(
+		AutoTest.AutoJoinType.None, "", "", false, 20 * 5, false);
 
 	/**
 	 * When now exact match is found, show diff popup

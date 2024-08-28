@@ -2,11 +2,11 @@ package io.github.anonymous123_code.quilt_bisect.gui;
 
 import dev.lambdaurora.spruceui.Position;
 import dev.lambdaurora.spruceui.widget.text.SpruceTextAreaWidget;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
-import io.github.anonymous123_code.quilt_bisect.shared.Issue;
-import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.Issue;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.MainConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.Tooltip;
