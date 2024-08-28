@@ -1,11 +1,11 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
 import io.github.anonymous123_code.quilt_bisect.plugin.gui.BisectPluginUi;
-import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.ActiveBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.BisectUtils;
-import io.github.anonymous123_code.quilt_bisect.shared.MainConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.StacktraceExtractionFailException;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.AbstractBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.ActiveBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.BisectUtils;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.MainConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.StacktraceExtractionFailException;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.*;
 import org.quiltmc.loader.api.gui.QuiltLoaderText;

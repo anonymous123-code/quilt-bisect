@@ -15,7 +15,7 @@ A Quilt mod & loader plugin for finding mods responsible for issues using a sear
 - once bisect is done, it will provide a summary of issues and solutions encountered. Please treat those with care though, [due to the way bisect works](#loading-the-right-mod-set)
 
 ### Configuring
-The file `<config>/quilt_bisect/main.json` contains most things a user may want to configure, see [MainConfig.java](/src/main/java/io/github/anonymous123_code/quilt_bisect/shared/MainConfig.java) for now.
+The file `<config>/quilt_bisect/main.json` contains most things a user may want to configure, see [MainConfig.java](/src/main/java/io/github/anonymous123_code/quilt_bisect/shared_plugin/MainConfig.java) for now.
 
 The file `<config>/quilt_bisect/active_bisect.json` contains information about the active bisect, including the settings, all tried mod sets and their respective log, and issue information.
 

@@ -1,7 +1,7 @@
 package io.github.anonymous123_code.quilt_bisect.mixin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.AbstractBisectConfig;
-import io.github.anonymous123_code.quilt_bisect.shared.AutoTest;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AbstractBisectConfig;
+import io.github.anonymous123_code.quilt_bisect.shared_mod.AutoTest;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ConnectScreen;
 import net.minecraft.client.gui.screen.Screen;

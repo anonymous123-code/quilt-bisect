@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.RemovedModContainerStore;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.RemovedModContainerStore;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.metadata.ModEnvironment;
 import org.jetbrains.annotations.Nullable;

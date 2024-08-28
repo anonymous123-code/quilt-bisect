@@ -1,6 +1,6 @@
 package io.github.anonymous123_code.quilt_bisect.plugin;
 
-import io.github.anonymous123_code.quilt_bisect.shared.RemovedModContainerStore;
+import io.github.anonymous123_code.quilt_bisect.shared_plugin.RemovedModContainerStore;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.loader.api.ModContainer;
 import org.quiltmc.loader.api.plugin.solver.ModLoadOption;
